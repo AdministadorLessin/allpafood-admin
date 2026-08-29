@@ -1,0 +1,33 @@
+main{
+    display: flex;
+    height: auto;
+    box-sizing: border-box;
+    min-height: 100vh;
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    justify-content: space-between;
+    padding: 0px 0px 0px 370px;
+}
+
+.sidebarCont{
+    width: 350px;
+    //box-shadow: 0px 0px 20px 0px rgba(0,0,0,.15);
+    position: relative;
+    left: 0px;
+    top: 0px;
+    position: fixed;
+    z-index: 99;
+}
+
+.pageContent{
+    width: 100%;
+    padding: 2%;
+    position: relative;
+    z-index: 2;
+    background: rgba(255,255,255,.9);
+    margin: 5vh 0px 0px 0px;
+    overflow: auto;
+    border-radius: 30px 0px 0px 0px;
+    box-shadow: 0px 0px 20px 0px rgba(0,0,0,.09);
+}

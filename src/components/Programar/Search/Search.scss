@@ -1,0 +1,27 @@
+.programSearch{
+    overflow: auto;
+    height: 100%;
+    h2{
+        font-family: var(--days);
+        margin: 0px 0px 7px 0px;
+        padding: 0px 0px 7px 0px;
+    }
+    .pageMenuFilters{
+        margin-bottom: 20px;
+        padding: 10px;
+        justify-content: space-between;
+    }
+    .pmSearchBox{
+        width: 100%;
+    }
+}
+
+.pageMenuTotalBox{
+    justify-content: flex-end;
+    padding-right: 10px;
+    flex-direction: column;
+    align-items: flex-end;
+    small{
+        margin: 0px;
+    }
+}

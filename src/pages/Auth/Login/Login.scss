@@ -1,0 +1,64 @@
+.loginPage{
+    align-items: center;
+    justify-content: center;
+    padding: 0px;
+}
+
+
+.loginFormBox{
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 2px 2px 40px 0px rgba(0,0,0,.15);
+    padding: 20px 40px 20px 40px;
+    border-radius: 20px;
+    flex-direction: column;
+    background: white;
+    position: relative;
+    z-index: 22;
+    h2{
+        margin-bottom: 20px;
+    }
+}
+
+.loginForm{
+    flex-direction: column;
+    .MuiFormControl-root{
+        margin-bottom: 20px;
+        border-radius: 25px;
+    }
+}
+
+.textFieldAdminLogin{
+    &::after{
+        content: '';
+        width: 24px;
+        height: 24px;
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        margin-top: auto;
+        margin-bottom: auto;
+        left: 20px;
+        display: block;
+        opacity: 1;
+    }
+}
+
+.loginTextFieldUser{
+    .MuiFormControl-root{
+        &::after{
+            background: url('../../../assets/img/ico_usuario.svg') center no-repeat;
+            background-size: auto;
+        }
+    }
+
+}
+
+.loginTextFieldClave{
+    .MuiFormControl-root{
+        &::after{
+            background: url('../../../assets/img/ico_clave.svg') center no-repeat;
+            background-size: auto;
+        }
+    }
+}

@@ -1,0 +1,42 @@
+
+.usuariosTableCont{
+    .btnBox{
+        display: flex;
+        flex-direction: column;
+        .btnPrimary{
+            padding: 5px 10px 5px 10px !important;
+            height: auto;
+            font-size: 12px;
+        }
+    }
+}
+
+.textFieldAdminUser{
+    .MuiFormControl-root{
+        .MuiInputBase-root{
+            input{
+                border-radius: 0px ;
+                padding-left: 10px;
+            }
+        }
+        .MuiInputAdornment-root{
+            margin: 5px 0px 0px 0px !important;
+        }
+        .MuiFormLabel-root{
+            left: 35px;
+            top: 0px;
+        }
+    }
+    
+}
+
+.userPaCsv{
+    width: auto;
+}
+
+.usPaBtn{
+    justify-content: space-between;
+    .btnPrimary{
+        width: auto;
+    }
+}

@@ -1,0 +1,31 @@
+.proMenuCard{
+    background: #effdfb;
+    padding: 5px;
+    flex-wrap: wrap;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,.04);
+    box-shadow: 1px 2px 2px 0px rgba(0,0,0,.05);
+    figure{
+        width: 80px;
+    }
+    .txt{
+        width: calc( 100% - 120px );
+        padding: 0px 10px 0px 10px;
+        h4{
+            font-size: 14px;
+            margin: 0px;
+        }
+        p{
+            font-size: 12px;
+        }
+    }
+    .action{
+        
+        background: var(--green);
+        width: 40px;
+        border-radius: 50%;
+        svg{
+            color: white;
+        }
+    }
+}

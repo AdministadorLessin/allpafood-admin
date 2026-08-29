@@ -1,0 +1,101 @@
+.pageProgramModal{
+    width: 90%;
+    max-width: 850px;
+    outline: none;
+    height: 100%;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    background: white;
+    padding: 25px;
+    overflow: auto;
+}
+
+.rbc-event-content{
+    font-size: 10px !important;
+}
+
+.pageMenuCont{
+    .rbc-calendar{
+        .rbc-toolbar{
+
+            margin-bottom: 30px;
+            .rbc-btn-group{
+                button{
+                    height: 40px !important;
+                    border: none !important;
+                    background: #cfedf1;
+                    border-radius: 20px !important;
+                    margin-right: 10px !important;
+                    font-weight: bold;
+                    color: var(--dark-blue) !important;
+                    &:hover,
+                    &:active{
+                        background: #cfedf1 !important;
+                        color: var(--dark-blue) !important;
+                    }
+                }
+                .rbc-active{
+                    background: var(--dark-blue) !important;
+                    color: white !important;
+                }
+            }
+            .rbc-toolbar-label{
+                text-transform: uppercase;
+                font-size: 25px;
+                font-family: var(--days);
+            }
+        }
+        .rbc-month-view{
+            border: none;
+            .rbc-row{
+                .rbc-header{
+                    border-bottom: 0px;
+                    border-left: 0px  !important;
+
+                    span{
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50px;
+                        background: #f4fafb;
+                        text-transform: capitalize;
+                        font-weight: normal;
+                        font-family: var(--days);
+                        padding: 10px 0px 10px 0px;
+                    }
+                }
+                .rbc-row-segment{
+                    align-items: center;
+                    justify-content: center;
+                    display: flex;
+                    .rbc-event{
+                        width: 90% !important;
+                        color: var(--dark-blue) !important;
+                    }
+                }
+            }
+            .rbc-month-row{
+                margin-top: 5px;
+                border-top: 0px solid red;
+                .rbc-day-bg{
+                    border: 1px solid rgba(0,0,0,.15);
+                    border-radius: 20px;
+                    margin: 0px 3px 0px 3px;
+                }
+                .rbc-row-content{
+                    .rbc-button-link{
+                        width: 30px;
+                        height: 30px;
+                        padding: 10px 10px 0px 0px;
+                        //background: var(--green);
+                        font-family: var(--days);
+                        border-radius: 50%;
+                    }
+                }
+            }
+        }
+    }
+}

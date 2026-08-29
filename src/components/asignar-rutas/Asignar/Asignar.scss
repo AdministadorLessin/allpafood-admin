@@ -1,0 +1,90 @@
+.compAsignar{
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    position: relative;
+    h2{
+        font-family: var(--days);
+    }
+}
+
+/*
+.caListMot{}
+*/
+
+.compDescargarExcel{
+    position: absolute !important;
+    right: 5%;
+    top: -10px;
+}
+
+//clmTitleBox
+.clmTitle{
+    font-size: 16px;
+    display: flex;
+}
+
+.clmTag{
+    font-size: 12px ;
+    font-weight: bold;
+    background: #e2ecee;
+    padding: 2px 9px 2px 5px;
+    border-radius: 10px;
+    margin-left: 10px;
+    color: var(--dark-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    svg{
+        font-size: 16px;
+        margin-right: 3px;
+    }
+}
+
+.clmCont{
+    p{
+        color: var(--dark-gris);
+        font-size: 14px;
+        margin: 0px 0px 5px 0px;
+    }
+    .btnPrimary{
+        height: auto;
+        width: auto;
+        min-width: none;
+        padding: 5px 15px 5px 15px !important;
+        margin: 10px 0px 0px 0px;
+        letter-spacing: 0.3px !important;
+    }
+}
+
+
+.asignarCambiarMotorizado{
+    background: white;
+    width: 90%;
+    max-width: 700px;
+    padding: 30px;
+    border-radius: 10px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+
+    .btnBox{
+        margin: 20px 0px 0px 0px;
+        align-items: flex-start;
+        justify-content: flex-start;
+        button{
+            margin-right: 10px;
+        }
+    }
+}
+
+.asignarCambiarMotorizadoList{
+    li{
+        border-bottom: 1px solid rgba(0,0,0,.15);
+        padding: 5px 0px 5px 0px;
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 0px 5px 0px;
+    }
+}

@@ -1,0 +1,136 @@
+$primary : #1976d2;
+$warning : #ed6c02;
+$sussess : #2e7d32;
+$error : #d32f2f;
+
+.irvMenuCont{
+    position: absolute;
+    top: 0px;
+    left: -30%;
+    opacity: 0;
+    width: 95%;
+    height: 100vh;
+    pointer-events: none;
+    background: white;
+    padding: 30px 20px 30px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    box-shadow: 0px 0px 20px 0px rgba(0,0,0,.15);
+    overflow: auto;
+    .titleAllpa{
+        margin-bottom: 20px;
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        figure{
+            width: 150px;
+        }
+    }
+}
+
+.irvMenuClose{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--dark-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    svg{
+        font-size: 26px;
+    }
+}
+
+.irvMenuContAct{
+    pointer-events: visible;
+    left: 0%;
+    z-index: 99;
+    opacity: 1;
+    flex-direction: column;
+}
+
+.irvMenuList{
+    width: 100%;
+    margin: 15px 0px 0px 0px;
+}
+
+.irvMenuStado{
+    p{
+        font-size: 12px;
+    }
+    .MuiChip-root{
+        margin-right: 5px;
+    }
+}
+
+.irvMenuItem{
+    width: 100%;
+    padding: 5px 15px 5px 25px;
+    border-radius:30px;
+    border: 1px solid rgba(0,0,0,.1);
+    margin-bottom: 10px;
+    display: flex;
+    background: #f4fcff;
+    align-items: center;
+    justify-content: space-between;
+    p{
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+    .irvBtn{
+        color: white;
+        padding: 5px 0px 5px 0px;
+        border-radius: 20px;
+        font-size: 14px;
+        display: flex;
+        cursor: pointer;
+        .check,.rep{
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            svg{
+                font-size: 18px;
+            }
+        }
+        .check{
+            background: $sussess ;
+        }
+        .rep{
+            background: $error ;
+            margin-right: 0px;
+        }
+    }
+}
+
+.irvMenuItemPendiente{
+    border: 1px solid $warning;
+    background: #fff1e6;
+    p{
+        color: $warning;
+    }
+}
+
+.irvMenuItemEntregado{
+    border: 1px solid $sussess;
+    background: #d9ffdb;
+    p{
+        color: $sussess;
+    }
+}
+
+.irvMenuItemReportado{
+    border: 1px solid $error;
+    background: #f6d4d4;
+    color: $error;
+    p{
+        color: $error;
+    }
+}

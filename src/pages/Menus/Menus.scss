@@ -1,0 +1,52 @@
+.pageMenuFilters{
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 20px 20px 20px;
+    background: #f3f9f9;
+    border-radius: 20px;
+    align-items: center;
+}
+
+.pmSearchBox{
+    width: 300px;
+    .MuiFormControl-root{
+        margin: 0px;
+        width: 100%;
+        //border-radius: 10px !important;
+        //overflow: hidden;
+        .MuiInputBase-root{
+            background: white;
+            border: 1px solid #dde7e7;
+            border-radius: 10px;
+            &::after,
+            &::before{
+                display: none;
+            }
+        }
+    }
+}
+
+.pageMenuCategories{
+    button{
+        margin-right: 10px;
+        background: #1976d2;
+        border-radius: 30px;
+        border: 0px solid #cae7d4;
+        color: white;
+        font-weight: bold;
+        padding: 6px 15px 6px 15px;
+        font-size: 12px !important;
+    }
+}
+
+.pageMenuCont{
+    margin: 40px 0px 0px 0px;
+}
+
+
+.addMenuPreview{
+    img{
+        width: 100%;
+        height: auto;
+    }
+}

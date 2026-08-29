@@ -1,0 +1,72 @@
+.pagePlanesBlock{
+    padding: 15px 0px 15px 0px;
+    justify-content: flex-start;
+    border-top: 1px solid rgba(0,0,0,.15);
+    margin: 0px;
+}
+
+.pagePlanesItem{
+    h4{
+        font-size: 14px;
+    }
+    .descriptionList{
+        position: relative;
+        li{
+            position: relative;
+            padding-left: 25px;
+            &::before{
+                width: 7px;
+                height: 7px;
+                background: var(--green);
+                content: '';
+                position: absolute;
+                top: 0px;
+                left: 10px;
+                border-radius: 50%;
+                bottom: 0px;
+                margin-top: auto;
+                margin-bottom: auto;
+            }
+        }
+    }
+}
+
+.benefitsList{
+
+    h5{
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    .MuiChip-root{
+        margin-right: 5px;
+    }
+}
+
+.propertiesList{
+    display: flex;
+    li{
+        padding: 0px 20px 0px 0px;
+        display: flex;
+        flex-direction: column;
+        small{
+            font-size: 12px;
+            display: inline-block;
+        }
+        p{
+            font-size: 20px;
+            font-weight: 900;
+            display: inline-block;
+        }
+    }
+}
+
+.pagePlanesFormUpdate{
+    overflow: auto;
+    height: 90%;
+    .btnPrimarySec{
+        height: 35px;
+        color: white;
+        font-size: 14px;
+        padding: 0px 20px 0px 20px !important;
+    }
+}
