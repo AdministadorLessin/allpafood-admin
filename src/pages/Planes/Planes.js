@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import './Planes.scss';
 import LayoutPages from "../../components/LayoutPages/LayoutPages";
+import PlanCard from "../../sections/planes/PlanCard";
+import DataState from "../../components/ui/DataState";
+import useDataStatus from "../../components/ui/useDataStatus";
 import TitlePage from './../../components/Pages/Title/Title';
 import Grid from '@mui/material/Grid';
 
 import Modal from '@mui/material/Modal';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-import Chip from '@mui/material/Chip';
 
 import axios from 'axios';
 import { useAuthContext } from './../../context/authContext';
@@ -35,6 +34,13 @@ const PagePlanes = (props) => {
 
   const { baseUrl, token } = useAuthContext();
   const [ planList, setPlanList ] = useState([]);
+  const { status, start, done, fail } = useDataStatus();
+
+  // El API los devuelve sin orden (419, 295, 569): asi no se pueden comparar.
+  // De menor a mayor precio, que es como se leen en la pasarela.
+  const sortedPlanes = [...(planList || [])].sort(
+    (a, b) => Number(a.price) - Number(b.price)
+  );
   const [ errorAxios, setErrorAxios ] = useState(false);
   const [ loadForm, setLoadForm ] = useState(false);
   const [ selectData,setSelectData ] = useState();
@@ -92,13 +98,16 @@ const PagePlanes = (props) => {
   });
 
   const getPlanes = () =>{
+    start();
     axios.get(baseUrl+'admin/subscription-plans',
       {headers: {"Authorization" : `Bearer ${token}`} }
     ).then((resp)=>{
       setPlanList(resp.data.data)
+      done();
     }).catch((error)=>{
       console.log(error);
       setLoadForm(false);
+      fail();
     })
   }
 
@@ -221,75 +230,23 @@ const PagePlanes = (props) => {
 
         <div className="inlineBlock ">
             
-            <Grid container spacing={2}>
-              {planList && planList.length > 0 && planList.map((item)=>(
-                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card 
-                    variant="outlined"
-                    className="pagePlanesItem"
-                  >
-                    <CardContent>
-                      <h4>
-                        {item.level}
-                      </h4>
-                      <h2>
-                        {item.description}
-                      </h2>
-                      <div className="pagePlanesBlock inlineBlock">
-                        <p>
-                          Precio: <strong>S/{item.price.toFixed(2)}</strong>
-                        </p>
-                        <p>
-                          Antes: <strong>S/{item.previousPrice.toFixed(2)}</strong>
-                        </p>
-                      </div>
-                      {item.properties && item.properties.length > 0 &&
-                      <ul
-                        className="pagePlanesBlock propertiesList"
-                      >
-                        {item.properties.map((pItem)=>(
-                          <li>
-                            <small>
-                              {pItem.name}
-                            </small>
-                            <p>{pItem.value}</p>
-                          </li>
-                        ))}
-                      </ul>
-                      }
-                      <div className="inlineFlex pagePlanesBlock benefitsList">
-                        <h5>Beneficios</h5>
-                        {item.benefits?.principalBenefits && item.benefits?.principalBenefits.map((eItem)=>(
-                          <Chip label={eItem} color="success" variant="outlined" />
-                        ))}
-                      </div>
-                      <div className="inlineFlex pagePlanesBlock benefitsList">
-                        <h5>Extras</h5>
-                        {item.benefits?.extraBenefits && item.benefits?.extraBenefits.map((eItem)=>(
-                          <Chip label={eItem} color="success" variant="outlined" />
-                        ))}
-                      </div>
-                      {item.descriptionList && item.descriptionList.length > 0 &&
-                        <ul className="pagePlanesBlock descriptionList">
-                          {item.descriptionList.map((sItem)=>(
-                            <li>{sItem}</li>
-                          ))}
-                        </ul>
-                      }
-                    </CardContent>
-                    <CardActions>
-                      <div 
-                        className="inlineFlex btnPrimary"
-                        onClick={()=>handleOpen(item)}
-                      >
-                        <span>Editar</span>
-                      </div>
-                    </CardActions>
-                  </Card>
+            <DataState
+              status={status}
+              isEmpty={!planList || planList.length === 0}
+              onRetry={getPlanes}
+              variant="cards"
+              skeletonCount={6}
+              emptyTitle="No hay planes creados"
+              emptyDescription="Cuando registres planes de suscripción aparecerán aquí."
+            >
+            <Grid container spacing={2.5} alignItems="stretch">
+              {sortedPlanes.map((item, index) => (
+                <Grid key={item.id ?? index} size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex' }}>
+                  <PlanCard plan={item} onEdit={handleOpen} />
                 </Grid>
-                
               ))}
             </Grid>
+            </DataState>
 
             <Modal
               open={open}

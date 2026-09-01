@@ -2,6 +2,8 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import TitlePage from './../../components/Pages/Title/Title';
 import LayoutPages from './../../components/LayoutPages/LayoutPages';
+import DataState from "./../../components/ui/DataState";
+import useDataStatus from "./../../components/ui/useDataStatus";
 import MenuCard from './../../components/Menus/Card/Card';
 import Button from '@mui/material/Button';
 import Modal from '@mui/material/Modal';
@@ -37,8 +39,10 @@ const PageMenus = (props) => {
 
   const [searchTxt,setSearchTxt] = useState('');
   const { token,baseUrl } = useAuthContext();
+  const { status, start, done, fail } = useDataStatus();
 
   const getMenus = () => {
+    start();
     axios.get(baseUrl + 'menu', {
       headers: {
         Authorization: `Bearer ${token}`
@@ -57,9 +61,11 @@ const PageMenus = (props) => {
       ];
 
       setCatList(types);
+      done();
     })
     .catch((error) => {
       console.log(error);
+      fail();
     });
   };
 
@@ -184,6 +190,15 @@ const PageMenus = (props) => {
       <div className="inlineBlock pageMenuCont">
         <div className="inlineBlock pageMenuList">
           
+            <DataState
+              status={status}
+              isEmpty={!menusListFilter || menusListFilter.length === 0}
+              onRetry={getMenus}
+              variant="cards"
+              skeletonCount={8}
+              emptyTitle="No hay platos en el catálogo"
+              emptyDescription="Crea el primer menú para empezar a programar la semana."
+            >
             <Grid container spacing={2}>
               {menusToShow?.map((item) => (
                 <Grid key={item.id} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -215,6 +230,7 @@ const PageMenus = (props) => {
                 )}
               </Grid>
             </Grid>
+            </DataState>
           
 
 

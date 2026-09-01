@@ -1,5 +1,9 @@
 
 .usuariosTableCont{
+    /* .inlineFlex centra y encoge al hijo; el DataGrid necesita ocupar
+       todo el ancho para que las columnas flex repartan espacio. */
+    display: block;
+    width: 100%;
     .btnBox{
         display: flex;
         flex-direction: column;

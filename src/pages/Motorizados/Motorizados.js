@@ -1,6 +1,8 @@
 import {useState,useEffect} from "react";
 import './Motorizados.scss';
 import LayoutPages from './../../components/LayoutPages/LayoutPages';
+import DataState from "./../../components/ui/DataState";
+import useDataStatus from "./../../components/ui/useDataStatus";
 import TitlePage from './../../components/Pages/Title/Title';
 
 import Table from '@mui/material/Table';
@@ -49,6 +51,7 @@ const rows = [
 const PageMotorizados = (props) => {
 
     const {baseUrl,token} = useAuthContext();
+    const { status, start, done, fail } = useDataStatus();
     const [formSwitch,setFormSwitch] = useState(false);
     const [respCreate,setRespCreate] = useState(false);
     const [selectUser,setSelectUser] = useState();
@@ -57,13 +60,16 @@ const PageMotorizados = (props) => {
     const [motorizadosList,setMotorizadosList] = useState();
     
     const getMotorizados = ()=>{
+        start();
         axios.get(baseUrl+'delivery/motorized/find-users',
             {headers: {"Authorization" : `Bearer ${token}`} }
         ).then((resp)=>{
             console.log(resp.data.data)
             setMotorizadosList(resp.data.data)
+            done();
         }).catch((error)=>{
             console.log(error)
+            fail();
         })
     }
 
@@ -277,6 +283,15 @@ const PageMotorizados = (props) => {
 
             <TitlePage title={'Motorizados Panel'} />
 
+            <DataState
+              status={status}
+              isEmpty={!motorizadosList || motorizadosList.length === 0}
+              onRetry={getMotorizados}
+              variant="table"
+              skeletonCount={6}
+              emptyTitle="No hay motorizados registrados"
+              emptyDescription="Cuando agregues personal de reparto aparecerá en esta tabla."
+            >
             <TableContainer component={Paper}>
                 <Table fullWidth aria-label="simple table">
 
@@ -338,6 +353,7 @@ const PageMotorizados = (props) => {
                     </TableBody>
                 </Table>
             </TableContainer>
+            </DataState>
 
             <div className="inlineBlock motBtnBox">
                 <button 

@@ -16,6 +16,7 @@ import PageMotorizados from './pages/Motorizados/Motorizados';
 import PageMotorizadoIrvin from './pages/Motorizado/MotorizadoIrvin';
 import PageUsuarios from './pages/Usuarios/Usuarios';
 import PagePlanes from './pages/Planes/Planes';
+import NotFoundPage from './pages/NotFound/NotFound';
 
 function App() {
   return (
@@ -40,6 +41,10 @@ function App() {
             <Route path="/ingresar" element={ <LoginPage/> } />
             <Route path="/comanda" element={ <ComandaPage/> } />
             <Route path="/irvin" element={ <PageMotorizadoIrvin /> } />
+
+            {/* Comodin: cualquier ruta que no coincida. Sin esto, una URL
+                desconocida no renderiza nada y deja la pantalla en blanco. */}
+            <Route path="*" element={ <NotFoundPage /> } />
           </Routes>
         </BrowserRouter>
     </AuthContextProvider>

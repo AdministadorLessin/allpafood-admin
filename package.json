@@ -9,6 +9,7 @@
     "@hookform/resolvers": "^5.0.1",
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
+    "@mui/x-charts": "^9.3.0",
     "@mui/x-data-grid": "^9.3.0",
     "@stomp/stompjs": "^7.1.1",
     "@testing-library/dom": "^10.4.0",
@@ -56,5 +57,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "@mui/x-internals": "9.1.0"
   }
 }

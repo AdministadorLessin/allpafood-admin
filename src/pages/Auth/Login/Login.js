@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './Login.scss';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useAuthContext } from '../../../context/authContext';
 import { useNavigate } from "react-router";
@@ -51,7 +52,10 @@ const LoginPage = (props) => {
     });
 
     const [errorAxios,setErrorAxios] = useState(false);
+    const [sending,setSending] = useState(false);
     const sendData = () =>{
+        setSending(true);
+        setErrorAxios(false);
         axios.post(baseUrl+'auth/login',
             {
             username:bodyFields.lfcorreo,
@@ -73,6 +77,9 @@ const LoginPage = (props) => {
             }
             
             }).catch((error) =>{
+                // Solo se libera el boton en el fallo: si el login funciona la
+                // pantalla navega, y reactivarlo antes deja ver un parpadeo.
+                setSending(false);
                 setErrorAxios(true)
             })
     }
@@ -119,8 +126,10 @@ const LoginPage = (props) => {
                         type={'submit'} 
                         variant="contained"
                         className={'btnPrimary'}
+                        disabled={sending}
+                        startIcon={sending ? <CircularProgress size={16} color="inherit" /> : null}
                     >
-                        Ingresar
+                        {sending ? 'Ingresando…' : 'Ingresar'}
                     </Button>
 
                     {errorAxios &&

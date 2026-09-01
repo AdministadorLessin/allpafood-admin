@@ -1,5 +1,7 @@
 import {useState,useEffect} from "react";
 import LayoutPages from './../../components/LayoutPages/LayoutPages';
+import DataState from "./../../components/ui/DataState";
+import useDataStatus from "./../../components/ui/useDataStatus";
 import TitlePage from './../../components/Pages/Title/Title';
 
 import { Calendar, momentLocalizer,Views } from 'react-big-calendar'
@@ -21,6 +23,7 @@ const localizer = momentLocalizer(moment);
 const PageProgram = (props) => {
 
     const { token, baseUrl } = useAuthContext();
+    const { status, start, done, fail } = useDataStatus();
 
     const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
@@ -34,6 +37,7 @@ const PageProgram = (props) => {
     const [date, setDate] = useState(new Date());
 
     const getEvents = () =>{
+        start();
         const iniDate = moment().subtract(30, 'days').format('YYYY-MM-DD');
         const endDate = moment().add(30, 'days').format('YYYY-MM-DD');
         
@@ -94,8 +98,10 @@ const PageProgram = (props) => {
             })
             //console.log(eventsTmp)
             setEventList(eventsTmp)
+            done();
         }).catch((errr)=>{
             console.log(errr)
+            fail();
         })
     }
 
@@ -164,6 +170,13 @@ const PageProgram = (props) => {
             <TitlePage title={'Programe sus menus'} />
 
             <div className="inlineBlock pageMenuCont">
+                <DataState
+                    status={status}
+                    isEmpty={false}
+                    onRetry={getEvents}
+                    variant="list"
+                    skeletonCount={4}
+                >
                 <Calendar
                     localizer={localizer}
                     events={eventList}
@@ -192,6 +205,7 @@ const PageProgram = (props) => {
                         setDate(new Date(date));
                     }}
                 />
+                </DataState>
             </div>
 
             <Modal

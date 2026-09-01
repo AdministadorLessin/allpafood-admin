@@ -1,9 +1,15 @@
 import  { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { styled } from '@mui/material/styles';
 
 import './Usuarios.scss';
 
 import LayoutPages from "../../components/LayoutPages/LayoutPages";
+import { STATUS } from "../../components/ui/DataState";
+import useDataStatus from "../../components/ui/useDataStatus";
+import StateMessage from "../../components/ui/StateMessage";
+import InboxRoundedIcon from "@mui/icons-material/InboxRounded";
+import CloudOffRoundedIcon from "@mui/icons-material/CloudOffRounded";
 import TitlePage from './../../components/Pages/Title/Title';
 import { DataGrid } from '@mui/x-data-grid';
 import { useAuthContext } from './../../context/authContext';
@@ -22,6 +28,13 @@ import UsuarioFormActualizarPlan from "../../components/Usuarios/Forms/Actualiza
 import UsuarioFormCambiarPlan from "../../components/Usuarios/Forms/CambiarPlan/CambiarPlan";
 
 
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+
+import buildUserColumns from '../../sections/usuarios/user-table-columns';
+import { SEGMENTS, matchesSegment, countBySegment } from '../../sections/usuarios/user-segments';
+
 import UploadUsersCsv from './uploadCsv';
 import UsuarioFormCrear from './../../components/Usuarios/Forms/CrearUsuario/CrearUsuario';
 
@@ -39,38 +52,33 @@ const VisuallyHiddenInput = styled('input')({
 
 const PageUsuarios = (props) => {
 
-  const paginationModel = { page: 1, pageSize: 10 };
+  const paginationModel = { page: 0, pageSize: 10 };
   const { token, baseUrl } = useAuthContext();
+  const { status, start, done, fail } = useDataStatus();
   const [ users, setUsers ] = useState([]);
   const [ search, setSearch ] = useState('');
+  // El panel enlaza aqui con ?segmento=porVencer desde "Ver lista y contactar".
+  const [ searchParams, setSearchParams ] = useSearchParams();
+  const segment = searchParams.get('segmento') || 'todos';
+  const setSegment = (value) => {
+    if (value === 'todos') setSearchParams({});
+    else setSearchParams({ segmento: value });
+  };
 
 
-  const columns = [
-    { field: 'id', headerName: 'ID', width: 140, sortable: false, },
-    { field: 'name', headerName: 'Nombres', width: 180, sortable: false, },
-    { field: 'lastName', headerName: 'Apellidos', width: 250, sortable: false, },
-    { field: 'dni',headerName: 'DNI', width: 90, sortable: false, },
-    { field: 'phone',headerName: 'Numero', width: 120, sortable: false },
-    { field: 'mail',headerName: 'Correo', width: 120, sortable: false },
-    { field: 'fecreg',headerName: 'Fec. Reg', width: 120, sortable: false },
-    { field: 'dirreg',headerName: 'Dir. Reg', width: 120, sortable: false },
+  const columns = buildUserColumns({ onAction: (row, form) => handleOpen(row, form) });
 
-    { field: 'plan',headerName: 'Plan', width: 90, sortable: false, },
-    { field: 'inicia',headerName: 'Inicia', width: 120 },
-    { field: 'expira',headerName: 'Expira', width: 120 },
-    { field: 'metpago',headerName: 'M.P.', width: 120 },
-    { field: 'pago',headerName: 'Pago', width: 120 },
-    { field: 'consumedHide',headerName: 'Consumido', width: 120, sortable: false, },
-    { field: 'consumed',headerName: 'Envios', width: 120, sortable: false, },
-    { field: 'state',headerName: 'Estado', width: 120, sortable: false, },
 
-  ];
+  const segmentCounts = countBySegment(users);
 
   const filteredUsers = users.filter((user) => {
+    if (!matchesSegment(user, segment)) return false;
+
     const text = search.toLowerCase().trim();
+    if (!text) return true;
 
     return (
-      user.firstName?.toLowerCase().includes(text) ||
+      user.name?.toLowerCase().includes(text) ||
       user.lastName?.toLowerCase().includes(text) ||
       user.dni?.toString().includes(text) ||
       user.phone?.toString().includes(text) ||
@@ -79,6 +87,7 @@ const PageUsuarios = (props) => {
   });
 
   const getUsuarios = () =>{
+    start();
     axios.get(baseUrl+'admin/user-plan?page=1&size=100',
       {headers: {"Authorization" : `Bearer ${token}`} }
     ).then((resp)=>{
@@ -94,8 +103,8 @@ const PageUsuarios = (props) => {
             lastName: item.user?.profile?.lastname, 
             phone: item.user?.phoneNumber,
             mail: item.user?.email,
-            fecreg: item.user?.registerDate ? item.user?.registerDate : '00/00/00',
-            dirreg: item.user?.profile?.address ? item.user?.profile?.address : 'Av. Arequipa 123',
+            fecreg: item.user?.registerDate || null,
+            dirreg: item.user?.profile?.address || null,
             plan: item.benefits?.subscriptionPlan?.description,
             inicia:item.planInitDate,
             expira: item.planExpirationDate,
@@ -103,6 +112,8 @@ const PageUsuarios = (props) => {
             pago: item.totalPrice? item.totalPrice: '0.0',
 
             consumedHide: item.consumedBenefits?.orders?.consumed,
+            consumedCount: item.consumedBenefits?.orders?.consumed,
+            consumedTotal: item.consumedBenefits?.orders?.total,
             consumed: item.consumedBenefits?.orders?.consumed + ' / ' + item.consumedBenefits?.orders?.total,
             state: item.user.status === 1 ? 'Activo' : 'Inactivo',
             dni: item.user.documentNumber
@@ -110,9 +121,11 @@ const PageUsuarios = (props) => {
         })
       }
       setUsers(usersTmp)
+      done();
 
     }).catch((err)=>{
       console.log(err)
+      fail();
     })
   }
 
@@ -165,75 +178,108 @@ const PageUsuarios = (props) => {
     <LayoutPages>
       <TitlePage title={'Usuarios:'} />
 
-      <div className="inlineFlex textFieldAdmin textFieldAdmin2 textFieldAdminUser">
-        <TextField
-          fullWidth
-          size="small"
-          label="Buscar usuario"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          //sx={{ mb: 2, maxWidth: 500 }}
-          variant="filled"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: search && (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setSearch('')}
-                  >
-                    <ClearIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 2.5,
+        }}
+      >
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+          {SEGMENTS.map((item) => {
+            const selected = segment === item.value;
+            return (
+              <Chip
+                key={item.value}
+                label={`${item.label} (${segmentCounts[item.value] ?? 0})`}
+                onClick={() => setSegment(item.value)}
+                sx={{
+                  fontWeight: selected ? 600 : 500,
+                  color: selected ? 'common.white' : 'text.secondary',
+                  bgcolor: selected ? 'grey.800' : 'background.paper',
+                  border: '1px solid',
+                  borderColor: selected ? 'grey.800' : 'divider',
+                  '&:hover': { bgcolor: selected ? 'grey.700' : 'grey.100' },
+                }}
+              />
+            );
+          })}
+        </Stack>
+
+        <Box sx={{ width: { xs: '100%', md: 320 } }}>
+        <div className="inlineFlex textFieldAdmin textFieldAdmin2 textFieldAdminUser">
+          <TextField
+            fullWidth
+            size="small"
+            label="Buscar usuario"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            //sx={{ mb: 2, maxWidth: 500 }}
+            variant="filled"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: search && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setSearch('')}
+                    >
+                      <ClearIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </div>
+        </Box>
+      </Box>
+
       <div className="inlineFlex usuariosTableCont">
         <DataGrid
           rows={filteredUsers}
           columns={columns}
+          loading={status === STATUS.loading}
+          slotProps={{ loadingOverlay: { variant: 'skeleton', noRowsVariant: 'skeleton' } }}
+          slots={{
+            noRowsOverlay: () =>
+              status === STATUS.error ? (
+                <StateMessage
+                  dense
+                  color="error"
+                  icon={<CloudOffRoundedIcon />}
+                  title="No pudimos cargar los usuarios"
+                  description="Revisa tu conexión y vuelve a intentarlo."
+                />
+              ) : (
+                <StateMessage
+                  dense
+                  icon={<InboxRoundedIcon />}
+                  title="No hay usuarios para mostrar"
+                  description="Prueba con otra búsqueda o crea el primer usuario."
+                />
+              ),
+          }}
           initialState={{
             pagination: {
               paginationModel,
             },
           }}
-          pageSizeOptions={[5, 10]}
-          sx={{ border: 0 }}
+          pageSizeOptions={[10, 25, 50]}
+          sx={{ border: 0, width: '100%', minHeight: 520 }}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
-          onCellClick={(params)=>{
-            if (
-              params.field === 'name' || 
-              params.field === 'lastName' || 
-              params.field === 'phone' || 
-              params.field === 'mail' || 
-              params.field === 'dni' || 
-              params.field === 'state' 
-            ) {
-              handleOpen(params.row,1);
-            }
-
-            if (
-              params.field === 'expira' || 
-              params.field === 'consumed'
-            ) {
-              handleOpen(params.row,2);
-            }
-
-            if (params.field === 'plan') {
-              handleOpen(params.row,3);
-            }
-          }}
-          columnVisibilityModel={
-          {
-            consumedHide: false,
-          }}
+          rowHeight={68}
+          columnHeaderHeight={48}
+          disableRowSelectionOnClick
+          columnVisibilityModel={{ id: false }}
         />
 
 
