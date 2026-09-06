@@ -7,7 +7,10 @@ const storageInfo = 'inf';
 
 export default function AuthContextProvider({children}) {
     
-    const baseUrl= 'https://api.allpafood.com/dev/api-af/v1/';
+    // La direccion del API sale del entorno, con la de siempre como valor por
+    // defecto: asi se puede apuntar a un servidor local sin editar el codigo y
+    // sin riesgo de que ese cambio termine desplegado.
+    const baseUrl = process.env.REACT_APP_API_URL || 'https://api.allpafood.com/dev/api-af/v1/';
     const [token,setToken] = useState(() =>
         window.localStorage.getItem(storageToken)
     );

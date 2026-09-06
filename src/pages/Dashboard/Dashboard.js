@@ -19,6 +19,7 @@ import RevenueTrendCard from '../../sections/dashboard/RevenueTrendCard';
 import RetentionCard from '../../sections/dashboard/RetentionCard';
 import BreakdownCard from '../../sections/dashboard/BreakdownCard';
 import { DASHBOARD_MOCK } from '../../_mock/dashboard';
+import AvisoRetraso from '../../sections/entregas/AvisoRetraso';
 
 const soles = (value) => `S/${Number(value).toLocaleString('es-PE')}`;
 
@@ -32,6 +33,11 @@ const DashboardPage = () => {
           <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Resumen</Typography>
           <Typography variant="h2">Panel de control</Typography>
         </Box>
+
+      {/* Lo primero al entrar: si hoy el reparto va tarde, se avisa desde aqui
+          y aparece al instante en la app de todos los clientes del dia. */}
+      <AvisoRetraso />
+
 
         {/* Aviso permanente: estas cifras no son reales todavia. */}
         <Chip
