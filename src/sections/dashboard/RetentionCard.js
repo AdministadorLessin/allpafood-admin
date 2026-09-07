@@ -25,17 +25,19 @@ export default function RetentionCard({ data }) {
     <Card sx={{ p: 3, height: 1, display: 'flex', flexDirection: 'column' }}>
       <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>Retención del mes</Typography>
 
+      {/* Sin nadie cuyo plan haya vencido todavia no hay retencion que medir:
+          un 0% ahi diria que se fueron todos, que es falso. Por eso el guion. */}
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
         <Gauge
           width={168}
           height={168}
-          value={data.percent}
+          value={data.percent ?? 0}
           startAngle={-110}
           endAngle={110}
           innerRadius="72%"
           outerRadius="100%"
           cornerRadius="50%"
-          text={({ value }) => `${value}%`}
+          text={() => (data.percent === null || data.percent === undefined ? '—' : `${data.percent}%`)}
           sx={(theme) => ({
             [`& .${gaugeClasses.valueText}`]: {
               fontSize: 30,
