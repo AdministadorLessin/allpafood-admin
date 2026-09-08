@@ -10,7 +10,15 @@ export default function AuthContextProvider({children}) {
     // La direccion del API sale del entorno, con la de siempre como valor por
     // defecto: asi se puede apuntar a un servidor local sin editar el codigo y
     // sin riesgo de que ese cambio termine desplegado.
-    const baseUrl = process.env.REACT_APP_API_URL || 'https://api.allpafood.com/dev/api-af/v1/';
+    /* En desarrollo la direccion se deduce del propio navegador: el API corre
+       en el mismo equipo que sirve el panel, en el 8443. Antes iba fija con la
+       IP de la Mac y el router se la cambiaba cada tanto: el panel dejaba de
+       hablar con el servidor y solo se veia "credenciales invalidas".
+       En produccion no cambia nada. */
+    const baseUrl = process.env.REACT_APP_API_URL
+        || (process.env.NODE_ENV === 'development' && typeof window !== 'undefined'
+            ? `${window.location.protocol}//${window.location.hostname}:8443/api-af/v1/`
+            : 'https://api.allpafood.com/dev/api-af/v1/');
     const [token,setToken] = useState(() =>
         window.localStorage.getItem(storageToken)
     );

@@ -21,6 +21,7 @@ import RetentionCard from '../../sections/dashboard/RetentionCard';
 import BreakdownCard from '../../sections/dashboard/BreakdownCard';
 import useMetricasNegocio from '../../sections/dashboard/useMetricasNegocio';
 import AvisoRetraso from '../../sections/entregas/AvisoRetraso';
+import NoEntregadas from '../../sections/entregas/NoEntregadas';
 
 const soles = (value) => `S/${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`;
 
@@ -39,6 +40,9 @@ const DashboardPage = () => {
             y aparece al instante en la app de todos los clientes del dia. */}
         <AvisoRetraso />
       </Box>
+
+      {/* Lo que necesita accion hoy va antes que cualquier metrica. */}
+      <NoEntregadas />
 
       {error &&
         <Alert severity="warning" sx={{ mb: 3 }}>{error}</Alert>
