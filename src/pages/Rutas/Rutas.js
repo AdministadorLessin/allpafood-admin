@@ -6,6 +6,7 @@ import 'moment/locale/es';
 import LayoutPages from '../../components/LayoutPages/LayoutPages';
 import TitlePage from '../../components/Pages/Title/Title';
 import { useAuthContext } from '../../context/authContext';
+import * as XLSX from 'xlsx';
 
 moment.locale('es');
 
@@ -61,6 +62,64 @@ const Rutas = () => {
       .then(cargar)
       .catch(() => setError('No pudimos asignar ese punto.'))
       .finally(() => setGuardando(false));
+  };
+
+  /**
+   * Hoja de rotulado de una ruta.
+   *
+   * Son los datos que van en la etiqueta de cada bolsa: restricciones,
+   * azucar, doble proteina. Por eso NO lleva direccion ni telefono —eso es
+   * cosa de la app del motorizado, no de la etiqueta— y el distrito va
+   * recortado, que es lo que cabe.
+   *
+   * Sale en el orden del recorrido para que la pila de bolsas quede en el
+   * orden en que se van a entregar.
+   */
+  const descargarRotulado = (ruta) => {
+    axios
+      .get(
+        `${baseUrl}admin/orders/export?date=${fecha}&motorizadoId=${ruta.motorizadoId}`,
+        cabecera
+      )
+      .then((resp) => {
+        const pedidos = resp.data?.data ?? resp.data ?? [];
+        if (!pedidos.length) {
+          setError(`${ruta.nombre} no tiene puntos ese dia.`);
+          return;
+        }
+
+        const nombreCorto = (n, a) => {
+          if (!n) return '';
+          const partes = n.trim().split(/\s+/);
+          const segundo = partes.length > 1 ? ` ${partes[1].charAt(0)}.` : '';
+          const apellido = a ? ` ${a.trim().split(/\s+/)[0]}` : '';
+          return `${partes[0]}${segundo}${apellido}`;
+        };
+
+        /* El numero sale del orden de la hoja, no de routePosition.
+           Un punto recien movido de otra ruta todavia no tiene posicion, y
+           las etiquetas saldrian sin numerar. El servidor ya devuelve las
+           filas en el orden del recorrido —el mismo que ve el motorizado en
+           su app—, asi que numerar por indice siempre coincide. */
+        const filas = pedidos.map((o, i) => ({
+          'N°': i + 1,
+          'N° Orden': o.orderId,
+          Cliente: nombreCorto(o.clientName, o.clientLastname),
+          Motorizado: nombreCorto(o.motorizedName, o.motorizedLastname),
+          Distrito: o.district ? `${o.district.substring(0, 5)}.` : '',
+          Azúcar: o.sugar === 'Sí' ? 'Sí' : '',
+          'Restricciones Alimentarias': o.alimentsRestrictions || '',
+          'Doble Proteína': o.doubleProtein === 'Sí' ? 'Sí' : '',
+          Snack: o.snack === 'Sí' ? 'Snack' : '',
+          Estado: o.status,
+        }));
+
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(filas), 'Rotulado');
+        const limpio = (ruta.nombre || 'ruta').replace(/[^\w]+/g, '-').toLowerCase();
+        XLSX.writeFile(libro, `rotulado-${limpio}-${fecha}.xlsx`);
+      })
+      .catch(() => setError('No pudimos generar la hoja de rotulado.'));
   };
 
   /** Guarda el orden de una ruta tras soltar. El primero es el punto 1. */
@@ -254,6 +313,15 @@ const Rutas = () => {
                         {r.puntos.length}/{r.capacidad}
                       </span>
                     </div>
+                    {r.puntos.length > 0 && (
+                      <button
+                        className="ruRotulado"
+                        onClick={() => descargarRotulado(r)}
+                        title="Hoja de rotulado de esta ruta, en orden de recorrido"
+                      >
+                        Rotulado
+                      </button>
+                    )}
                     <div className="ruBarraCupo">
                       <i
                         className={lleno ? 'tope' : casi ? 'alto' : ''}
