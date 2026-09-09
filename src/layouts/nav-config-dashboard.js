@@ -21,6 +21,7 @@ export const adminNavData = [
   { title: 'Menus', path: '/menu', icon: <RestaurantMenuIcon fontSize="small" /> },
   { title: 'Programar', path: '/programar', icon: <DateRangeIcon fontSize="small" /> },
   { title: 'Motorizados', path: '/motorizados', icon: <MopedIcon fontSize="small" /> },
+  { title: 'Rutas del dia', path: '/rutas', icon: <RouteIcon fontSize="small" /> },
   { title: 'Asignar rutas', path: '/asignar-rutas', icon: <RouteIcon fontSize="small" /> },
   { title: 'Comanda', path: '/comanda', icon: <ContentPasteIcon fontSize="small" /> },
 ];

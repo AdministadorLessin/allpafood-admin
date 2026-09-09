@@ -11,6 +11,7 @@ import ProtectedRoutes from './components/util/ProtectedRoutes.js/ProtectedRoute
 import ComandaPage from './pages/Comanda/Comanda';
 
 import PageAsignarRutas from './pages/Asignar-rutas/Asignar-rutas';
+import PageRutas from './pages/Rutas/Rutas';
 import PageMotorizado from './pages/Motorizado/Motorizado';
 import PageMotorizados from './pages/Motorizados/Motorizados';
 import PageMotorizadoIrvin from './pages/Motorizado/MotorizadoIrvin';
@@ -35,6 +36,7 @@ function App() {
               
               <Route path="/motorizados" element={ <PageMotorizados /> } />
               <Route path="/asignar-rutas" element={ <PageAsignarRutas /> } />
+              <Route path="/rutas" element={ <PageRutas /> } />
               <Route path="/ver-mis-rutas" element={ <PageAsignarRutas /> } />
               
             </Route>
