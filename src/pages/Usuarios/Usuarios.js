@@ -35,6 +35,14 @@ import Stack from '@mui/material/Stack';
 import buildUserColumns from '../../sections/usuarios/user-table-columns';
 import { SEGMENTS, matchesSegment, countBySegment } from '../../sections/usuarios/user-segments';
 
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+
 import UploadUsersCsv from './uploadCsv';
 import UsuarioFormCrear from './../../components/Usuarios/Forms/CrearUsuario/CrearUsuario';
 
@@ -138,13 +146,48 @@ const PageUsuarios = (props) => {
     }
   );
 
+  /* Eliminar no abre un formulario: pide confirmacion y llama al servidor.
+     Va por aqui para no duplicar el menu de acciones de la fila. */
+  const [porEliminar, setPorEliminar] = useState(null);
+  const [borrando, setBorrando] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState('');
+
   const handleOpen = (data,formNumb) => {
+    if (formNumb === 'eliminar') {
+      setErrorBorrar('');
+      setPorEliminar(data);
+      return;
+    }
     setOpen(true);
     setTmpData({
       ...tmpData,
       form:formNumb,
       data:data? data: null
     });
+  };
+
+  const eliminarUsuario = () => {
+    if (!porEliminar) return;
+    setBorrando(true);
+    setErrorBorrar('');
+    axios
+      .delete(`${baseUrl}admin/users/${porEliminar.id}`,
+        { headers: { Authorization: `Bearer ${token}` } })
+      .then(() => {
+        setPorEliminar(null);
+        getUsuarios();
+      })
+      .catch((e) => {
+        /* El servidor devuelve 409 con el motivo cuando el usuario tiene
+           facturas. Ese mensaje dice que hacer —desactivarlo— asi que se
+           muestra tal cual en vez de un "no se pudo" generico. */
+        const cuerpo = e?.response?.data;
+        setErrorBorrar(
+          cuerpo?.data?.message || cuerpo?.message ||
+          'No pudimos eliminar el usuario. Intentalo de nuevo.'
+        );
+      })
+      .finally(() => setBorrando(false));
   };
 
   const handleClose = () => {
@@ -333,6 +376,55 @@ const PageUsuarios = (props) => {
           }
         </ModalRightCont>
       </Modal>
+
+      {/* Confirmacion de borrado. No es un modal mas del panel derecho: es la
+          unica accion irreversible de la pantalla y tiene que verse como tal,
+          con el nombre de quien se va a borrar escrito delante. */}
+      <Dialog
+        open={Boolean(porEliminar)}
+        onClose={() => !borrando && setPorEliminar(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>Eliminar usuario</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1.5 }}>
+            Vas a eliminar a{' '}
+            <Box component="strong" sx={{ color: 'text.primary' }}>
+              {`${porEliminar?.name || ''} ${porEliminar?.lastName || ''}`.trim() || 'este usuario'}
+            </Box>
+            {porEliminar?.mail ? ` (${porEliminar.mail})` : ''}.
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Se borran también su perfil, su plan, su dirección de reparto y sus
+            pedidos programados. Esto no se puede deshacer.
+          </Typography>
+
+          {errorBorrar && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {errorBorrar}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => setPorEliminar(null)}
+            disabled={borrando}
+            sx={{ color: 'text.secondary' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={eliminarUsuario}
+            disabled={borrando}
+            variant="contained"
+            color="error"
+            disableElevation
+          >
+            {borrando ? 'Eliminando…' : 'Eliminar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </LayoutPages>
   )

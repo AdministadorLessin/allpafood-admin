@@ -18,7 +18,7 @@ import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 
 import UserRowActions from './UserRowActions';
 import { formatDate, parseDate } from './user-date';
-import { planStatus, remainingOrders, SOON_ORDERS, TONE } from './user-status';
+import { planStatus, remainingOrders, SOON_ORDERS, TONE, customerStatus, CUSTOMER } from './user-status';
 
 const TONE_COLOR = {
   expired: 'error',
@@ -36,6 +36,14 @@ const TONE_LABEL = {
   exhausting: 'Por agotarse',
   ok: 'Vigente',
   none: 'Sin fecha',
+};
+
+/* Tres estados, no dos. "Sin compras" es quien se registro y nunca pago:
+   antes salia como "Activo" y se confundia con un cliente. */
+const CUSTOMER_LABEL = {
+  customer: 'Cliente',
+  prospect: 'Sin compras',
+  disabled: 'Inactivo',
 };
 
 function initials(name, lastName) {
@@ -225,19 +233,27 @@ export default function buildUserColumns({ onAction }) {
     {
       field: 'state',
       headerName: 'Estado',
-      width: 110,
+      width: 124,
+      // Ordena por lo que significa, no por el texto: primero los clientes,
+      // despues los registrados sin compra, al final las cuentas apagadas.
+      valueGetter: (value, row) => {
+        const kind = customerStatus(row);
+        if (kind === CUSTOMER.customer) return 0;
+        if (kind === CUSTOMER.prospect) return 1;
+        return 2;
+      },
       renderCell: (params) => {
-        const active = params.row.state === 'Activo';
+        const kind = customerStatus(params.row);
+        const color =
+          kind === CUSTOMER.customer
+            ? { color: 'success.dark', bgcolor: 'success.lighter' }
+            : kind === CUSTOMER.prospect
+              ? { color: 'warning.dark', bgcolor: 'warning.lighter' }
+              : { color: 'grey.700', bgcolor: 'grey.200' };
+
         return (
           <Box sx={{ height: 1, display: 'flex', alignItems: 'center' }}>
-            <Chip
-              size="small"
-              label={params.row.state}
-              sx={{
-                color: active ? 'success.dark' : 'grey.700',
-                bgcolor: active ? 'success.lighter' : 'grey.200',
-              }}
-            />
+            <Chip size="small" label={CUSTOMER_LABEL[kind]} sx={color} />
           </Box>
         );
       },

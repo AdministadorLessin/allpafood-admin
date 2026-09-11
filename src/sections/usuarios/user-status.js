@@ -62,6 +62,29 @@ export function planStatus(row) {
   return TONE.ok;
 }
 
+/**
+ * Que es esta persona para el negocio, no si su cuenta esta habilitada.
+ *
+ * La columna "Estado" leia tbl_user.status, que vale 1 para todos: quien se
+ * registro por la pasarela y nunca llego a pagar aparecia igual de "Activo"
+ * que un cliente con plan vigente. La lista entera decia lo mismo y por lo
+ * tanto no decia nada.
+ *
+ * Ahora separa las tres cosas que si cambian lo que hay que hacer con esa
+ * fila: cuenta deshabilitada, registrado sin ninguna compra, y cliente.
+ */
+export const CUSTOMER = {
+  disabled: 'disabled',
+  prospect: 'prospect',
+  customer: 'customer',
+};
+
+export function customerStatus(row) {
+  if (row?.state !== 'Activo') return CUSTOMER.disabled;
+  if (!row?.plan) return CUSTOMER.prospect;
+  return CUSTOMER.customer;
+}
+
 /** Los estados que ameritan contactar al cliente para renovar. */
 export function needsRenewal(row) {
   const tone = planStatus(row);

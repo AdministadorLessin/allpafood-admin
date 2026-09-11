@@ -13,6 +13,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import Divider from '@mui/material/Divider';
 
 export default function UserRowActions({ row, onAction }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -55,6 +57,16 @@ export default function UserRowActions({ row, onAction }) {
         <MenuItem onClick={run(3)}>
           <ListItemIcon><SwapHorizIcon fontSize="small" /></ListItemIcon>
           Cambiar plan
+        </MenuItem>
+
+        {/* Separado del resto y en rojo: es la unica accion de este menu que
+            no se puede deshacer. El servidor ademas se niega a borrar a quien
+            tenga facturas, asi que un cliente que pago no se puede perder por
+            un clic distraido. */}
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem onClick={run('eliminar')} sx={{ color: 'error.main' }}>
+          <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon>
+          Eliminar usuario
         </MenuItem>
       </Menu>
     </>
