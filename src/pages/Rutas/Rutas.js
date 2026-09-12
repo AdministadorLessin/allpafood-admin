@@ -105,6 +105,11 @@ const Rutas = () => {
           'N°': i + 1,
           'N° Orden': o.orderId,
           Cliente: nombreCorto(o.clientName, o.clientLastname),
+          /* Lo que la cocina lee para armar la bolsa: "OP 1", o "OP 1 y 2"
+             cuando el plan trae almuerzo y cena, con el almuerzo primero.
+             Va pegado al nombre porque es lo que se compara contra el Excel
+             de la operacion mientras dure la migracion. */
+          Opción: o.option || '',
           Motorizado: nombreCorto(o.motorizedName, o.motorizedLastname),
           Distrito: o.district ? `${o.district.substring(0, 5)}.` : '',
           Azúcar: o.sugar === 'Sí' ? 'Sí' : '',
@@ -120,6 +125,57 @@ const Rutas = () => {
         XLSX.writeFile(libro, `rotulado-${limpio}-${fecha}.xlsx`);
       })
       .catch(() => setError('No pudimos generar la hoja de rotulado.'));
+  };
+
+  /**
+   * Excel de cruce del dia entero.
+   *
+   * Mientras una parte de los clientes siga en la hoja de calculo de siempre,
+   * conviven dos comandas. Esta hoja es la que permite ponerlas una al lado de
+   * la otra: usa el mismo vocabulario que el Excel de la operacion —"OP 1",
+   * "OP 1 y 2"— y lleva el nombre del plato al costado, que es lo unico que no
+   * se mueve si alguien reordena el menu del dia despues de que los clientes
+   * ya eligieron.
+   *
+   * Va ordenada por cliente y no por recorrido: se lee contra una lista de
+   * nombres, no contra una ruta. Por eso tampoco se acota a un motorizado.
+   */
+  const descargarCruce = () => {
+    axios
+      .get(`${baseUrl}admin/orders/export?date=${fecha}`, cabecera)
+      .then((resp) => {
+        const pedidos = resp.data?.data ?? resp.data ?? [];
+        if (!pedidos.length) {
+          setError(`No hay pedidos programados para el ${moment(fecha).format('D [de] MMMM')}.`);
+          return;
+        }
+
+        const nombre = (n, a) => `${n || ''} ${a || ''}`.trim();
+
+        const filas = [...pedidos]
+          .sort((a, b) =>
+            nombre(a.clientName, a.clientLastname)
+              .localeCompare(nombre(b.clientName, b.clientLastname), 'es')
+          )
+          .map((o) => ({
+            Fecha: moment(fecha).format('DD/MM/YYYY'),
+            Cliente: nombre(o.clientName, o.clientLastname),
+            Opción: o.option || '',
+            Almuerzo: o.lunchName || '',
+            Cena: o.dinnerName || '',
+            Bebida: o.drinkName || '',
+            Snack: o.snackName || '',
+            Distrito: o.district || '',
+            Motorizado: nombre(o.motorizedName, o.motorizedLastname),
+            'Restricciones Alimentarias': o.alimentsRestrictions || '',
+            'N° Orden': o.orderId,
+          }));
+
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(filas), 'Cruce');
+        XLSX.writeFile(libro, `cruce-${fecha}.xlsx`);
+      })
+      .catch(() => setError('No pudimos generar el Excel de cruce.'));
   };
 
   /** Guarda el orden de una ruta tras soltar. El primero es el punto 1. */
@@ -242,6 +298,13 @@ const Rutas = () => {
             <span className="ruResumen__total">
               {totalPuntos} puntos · {tablero.rutas.length} rutas
             </span>
+            <button
+              className="ruCruce"
+              onClick={descargarCruce}
+              title="Todos los pedidos del dia con su numero de opcion, para cruzar contra el Excel de la operacion"
+            >
+              Excel de cruce
+            </button>
           </div>
 
           {tablero.sinAsignar.length > 0 && (
