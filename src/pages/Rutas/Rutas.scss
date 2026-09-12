@@ -47,6 +47,7 @@
     margin:0 0 12px;
     b{ font-weight:700; }
     &--rojo{ background:#FBEDE9; color:#A33718; }
+    &--ok{ background:#E6F6EE; color:#186A44; }
 }
 
 /* ---------------------------------------------------------- bandeja */
@@ -164,4 +165,29 @@
     border:1px solid var(--border); border-radius:var(--r-pill);
     padding:4px 10px; cursor:pointer;
     &:hover{ color:var(--ink); border-color:var(--border-strong); }
+}
+
+/* ------------------------------------------------- aviso de salida
+   Manda WhatsApp a clientes reales, asi que pide confirmacion antes. En
+   reposo se ve tan discreto como el rotulado —no es la accion frecuente—,
+   y solo al confirmar toma color. */
+.ruAvisar{
+    width:100%; margin-top:6px;
+    font-family:inherit; font-size:11.5px; font-weight:700; letter-spacing:.03em;
+    color:var(--ink-soft); background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--r-pill);
+    padding:4px 10px; cursor:pointer;
+    &:hover{ color:var(--ink); border-color:var(--border-strong); }
+    &:disabled{ opacity:.55; cursor:default; }
+
+    &__confirma{ display:flex; gap:5px; margin-top:6px; }
+
+    &--si{
+        flex:1 1 auto; margin-top:0;
+        color:#fff; background:var(--ink); border-color:var(--ink);
+        &:hover{ color:#fff; }
+    }
+    &--no{
+        flex:0 0 auto; width:auto; margin-top:0;
+    }
 }

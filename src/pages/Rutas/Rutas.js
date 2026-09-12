@@ -31,6 +31,10 @@ const Rutas = () => {
   const [busqueda, setBusqueda] = useState('');
   const [arrastrando, setArrastrando] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // Ruta cuyo aviso esta esperando confirmacion, y el ultimo resultado.
+  const [porAvisar, setPorAvisar] = useState(null);
+  const [avisando, setAvisando] = useState(false);
+  const [aviso, setAviso] = useState('');
 
   const cabecera = useMemo(
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
@@ -125,6 +129,43 @@ const Rutas = () => {
         XLSX.writeFile(libro, `rotulado-${limpio}-${fecha}.xlsx`);
       })
       .catch(() => setError('No pudimos generar la hoja de rotulado.'));
+  };
+
+  /**
+   * Avisa a los clientes de una ruta que su pedido salio.
+   *
+   * Esto antes lo hacia la asignacion por su cuenta: arrastrar una tarjeta le
+   * mandaba el WhatsApp al cliente en ese instante, fuera la hora que fuera, y
+   * moverla de nuevo se lo repetia. Ahora es una accion del coordinador, y
+   * pide confirmacion porque manda mensajes a gente real.
+   *
+   * El servidor ignora a los que ya tenian aviso, asi que apretar dos veces no
+   * molesta a nadie dos veces.
+   */
+  const avisarSalida = (ruta) => {
+    setAvisando(true);
+    setError(null);
+    setAviso('');
+
+    axios
+      .post(
+        `${baseUrl}delivery/motorized/notify-route`,
+        ruta.puntos.map((p) => p.orderId),
+        cabecera
+      )
+      .then((r) => {
+        const avisados = r.data?.data?.avisados ?? r.data?.avisados ?? 0;
+        setAviso(
+          avisados === 0
+            ? `Los clientes de ${ruta.nombre} ya tenian el aviso. No se repitio ninguno.`
+            : `Aviso enviado a ${avisados} cliente${avisados === 1 ? '' : 's'} de ${ruta.nombre}.`
+        );
+      })
+      .catch(() => setError(`No pudimos avisar a los clientes de ${ruta.nombre}.`))
+      .finally(() => {
+        setAvisando(false);
+        setPorAvisar(null);
+      });
   };
 
   /**
@@ -285,6 +326,7 @@ const Rutas = () => {
       </div>
 
       {error && <div className="ruAviso ruAviso--rojo">{error}</div>}
+      {aviso && <div className="ruAviso ruAviso--ok">{aviso}</div>}
       {cargando && <div className="ruAviso">Cargando el tablero…</div>}
 
       {tablero && !cargando && (
@@ -377,13 +419,44 @@ const Rutas = () => {
                       </span>
                     </div>
                     {r.puntos.length > 0 && (
-                      <button
-                        className="ruRotulado"
-                        onClick={() => descargarRotulado(r)}
-                        title="Hoja de rotulado de esta ruta, en orden de recorrido"
-                      >
-                        Rotulado
-                      </button>
+                      <>
+                        <button
+                          className="ruRotulado"
+                          onClick={() => descargarRotulado(r)}
+                          title="Hoja de rotulado de esta ruta, en orden de recorrido"
+                        >
+                          Rotulado
+                        </button>
+
+                        {/* Dos pasos a proposito: manda WhatsApp a clientes
+                            reales y no hay forma de desmandarlo. */}
+                        {porAvisar === r.motorizadoId ? (
+                          <div className="ruAvisar__confirma">
+                            <button
+                              className="ruAvisar ruAvisar--si"
+                              disabled={avisando}
+                              onClick={() => avisarSalida(r)}
+                            >
+                              {avisando ? 'Avisando…' : `Avisar a ${r.puntos.length}`}
+                            </button>
+                            <button
+                              className="ruAvisar ruAvisar--no"
+                              disabled={avisando}
+                              onClick={() => setPorAvisar(null)}
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="ruAvisar"
+                            onClick={() => { setAviso(''); setPorAvisar(r.motorizadoId); }}
+                            title="Manda el WhatsApp de salida a los clientes de esta ruta"
+                          >
+                            Avisar salida
+                          </button>
+                        )}
+                      </>
                     )}
                     <div className="ruBarraCupo">
                       <i

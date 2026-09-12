@@ -69,9 +69,44 @@
     .motBtn{
         background: var(--green);
         color: white;
-        padding: 5px 10px 5px 10px;
+        padding: 7px 12px;
+        border: 0;
+        font-family: inherit;
         border-radius: 20px;
         font-size: 14px;
         cursor: pointer;
+        /* En la calle y con una mano: el area de toque manda sobre lo compacto. */
+        min-height: 34px;
+        white-space: nowrap;
+        &:disabled{
+            opacity: .5;
+            cursor: default;
+        }
     }
+    /* El segundo final de una entrega, no un boton de segunda. Se distingue por
+       color para que no se aprieten uno por otro, que mandaria el WhatsApp
+       equivocado y el cliente bajaria a una recepcion donde no hay nada. */
+    .motBtn--recepcion{
+        background: #fff;
+        color: var(--dark-blue);
+        border: 1px solid var(--dark-blue);
+    }
+}
+
+.motAcciones{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.motError{
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #FBEDE9;
+    color: #A33718;
+    font-size: 13.5px;
+    line-height: 1.35;
 }
