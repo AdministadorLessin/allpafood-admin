@@ -144,23 +144,29 @@ const DashboardPage = () => {
           </Grid>
 
           <Grid size={{ xs: 12, lg: 4 }}>
+            {/* Esto NO son pedidos esperando asignacion. Es la suma de los
+                envios que los clientes con plan vigente ya pagaron y todavia
+                no consumieron, o sea la comida que la empresa debe. Decia
+                "por despachar" al lado de un boton "Asignar rutas", y se leia
+                como cincuenta pedidos pendientes de hoy cuando no habia
+                ninguno. Los que si esperan asignacion salen en el tablero. */}
             <KpiCard
-              title="Entregas pendientes"
+              title="Envíos por entregar"
               value={datos.pendingDeliveries.value}
-              caption="por despachar de los planes activos"
+              caption="ya pagados por los clientes con plan vigente"
               icon={<LocalShippingRoundedIcon />}
               color="primary"
               action={
                 <Button
                   component={RouterLink}
-                  to="/asignar-rutas"
+                  to="/rutas"
                   size="small"
                   variant="contained"
                   color="inherit"
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{ mt: 1, whiteSpace: 'nowrap' }}
                 >
-                  Asignar rutas
+                  Ver rutas del día
                 </Button>
               }
             />

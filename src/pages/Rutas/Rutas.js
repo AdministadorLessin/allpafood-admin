@@ -35,6 +35,7 @@ const Rutas = () => {
   const [porAvisar, setPorAvisar] = useState(null);
   const [avisando, setAvisando] = useState(false);
   const [aviso, setAviso] = useState('');
+  const [repartiendo, setRepartiendo] = useState(false);
 
   const cabecera = useMemo(
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
@@ -129,6 +130,31 @@ const Rutas = () => {
         XLSX.writeFile(libro, `rotulado-${limpio}-${fecha}.xlsx`);
       })
       .catch(() => setError('No pudimos generar la hoja de rotulado.'));
+  };
+
+  /**
+   * Corre el reparto automatico, el mismo que se ejecuta cada noche.
+   *
+   * Reparte segun la ruta que ya tiene guardada cada direccion y respeta los
+   * cupos; lo que no tiene ruta lo deja sin asignar para que lo decidas tu.
+   *
+   * El servidor siempre trabaja sobre MANANA, sin mirar la fecha del tablero.
+   * Por eso el boton solo aparece cuando estas parado en manana: en otro dia
+   * repartiria algo que no estas viendo.
+   */
+  const repartirAutomatico = () => {
+    setRepartiendo(true);
+    setError(null);
+    setAviso('');
+
+    axios
+      .post(`${baseUrl}delivery/motorized/assign-default`, {}, cabecera)
+      .then(() => {
+        setAviso('Reparto automatico ejecutado. Lo que quedo sin asignar no tenia ruta guardada.');
+        cargar();
+      })
+      .catch(() => setError('No pudimos correr el reparto automatico.'))
+      .finally(() => setRepartiendo(false));
   };
 
   /**
@@ -340,6 +366,16 @@ const Rutas = () => {
             <span className="ruResumen__total">
               {totalPuntos} puntos · {tablero.rutas.length} rutas
             </span>
+            {fecha === moment().add(1, 'day').format('YYYY-MM-DD') && (
+              <button
+                className="ruCruce"
+                onClick={repartirAutomatico}
+                disabled={repartiendo}
+                title="Reparte los puntos que tienen ruta guardada, respetando el cupo de cada motorizado"
+              >
+                {repartiendo ? 'Repartiendo…' : 'Repartir automático'}
+              </button>
+            )}
             <button
               className="ruCruce"
               onClick={descargarCruce}

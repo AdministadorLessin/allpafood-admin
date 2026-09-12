@@ -10,7 +10,6 @@ import AuthContextProvider from './context/authContext';
 import ProtectedRoutes from './components/util/ProtectedRoutes.js/ProtectedRoutes';
 import ComandaPage from './pages/Comanda/Comanda';
 
-import PageAsignarRutas from './pages/Asignar-rutas/Asignar-rutas';
 import PageRutas from './pages/Rutas/Rutas';
 import PageMotorizado from './pages/Motorizado/Motorizado';
 import PageMotorizados from './pages/Motorizados/Motorizados';
@@ -34,10 +33,8 @@ function App() {
               <Route path="/programar" element={ <PageProgram /> } />
               <Route path="/motorizado" element={ <PageMotorizado /> } />
               
-              <Route path="/motorizados" element={ <PageMotorizados /> } />
-              <Route path="/asignar-rutas" element={ <PageAsignarRutas /> } />
-              <Route path="/rutas" element={ <PageRutas /> } />
-              <Route path="/ver-mis-rutas" element={ <PageAsignarRutas /> } />
+              <Route path="/motorizados" element={ <PageMotorizados /> } /> } />
+              <Route path="/rutas" element={ <PageRutas /> } /> } />
               
             </Route>
             <Route path="/ingresar" element={ <LoginPage/> } />

@@ -14,7 +14,10 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import Divider from '@mui/material/Divider';
+
+import { whatsappLink } from './user-phone';
 
 export default function UserRowActions({ row, onAction }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -23,6 +26,15 @@ export default function UserRowActions({ row, onAction }) {
     event.stopPropagation();
     setAnchorEl(null);
     onAction(row, form);
+  };
+
+  // No abre un modal ni toca el servidor: solo lleva a la conversacion. Por eso
+  // se resuelve aca y no pasa por onAction como el resto.
+  const chat = whatsappLink(row.phone);
+  const escribir = (event) => {
+    event.stopPropagation();
+    setAnchorEl(null);
+    window.open(chat, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -46,6 +58,15 @@ export default function UserRowActions({ row, onAction }) {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{ paper: { sx: { minWidth: 208, p: 0.5 } } }}
       >
+        {/* Primero de la lista porque es lo unico que sirve para la fila de
+            alguien que se registro y nunca pago: no hay plan que editar ni que
+            cambiarle, hay que escribirle. */}
+        <MenuItem onClick={escribir} disabled={!chat}>
+          <ListItemIcon><WhatsAppIcon fontSize="small" /></ListItemIcon>
+          {chat ? 'Escribir por WhatsApp' : 'Sin telefono'}
+        </MenuItem>
+        <Divider sx={{ my: 0.5 }} />
+
         <MenuItem onClick={run(1)}>
           <ListItemIcon><EditOutlinedIcon fontSize="small" /></ListItemIcon>
           Editar usuario
