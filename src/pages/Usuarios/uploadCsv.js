@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import LinearProgress from "@mui/material/LinearProgress";
 import Alert from "@mui/material/Alert";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import { styled } from "@mui/material/styles";
 import { useAuthContext } from "../../context/authContext";
 
@@ -20,7 +21,41 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
-export default function UploadUsersCsv() {
+/* La plantilla sale del propio panel para que nadie arme el archivo con las
+   columnas en otro orden.
+   "sep=," en la primera linea hace que Excel la abra en columnas aunque la
+   maquina use punto y coma. El ejemplo va sin tildes a proposito: Excel
+   ignora esa linea cuando el archivo trae marca de UTF-8, y sin la marca las
+   tildes se ven mal al abrir. Al guardar desde Excel da igual, el servidor
+   entiende los dos formatos. */
+const PLANTILLA = [
+  "sep=,",
+  "nombre,apellido,correo,telefono,documento,contrasena,plan,envios_consumidos,fecha_inicio",
+  "Ana,Torres,ana.torres@gmail.com,987654321,45678912,Allpa2026,Nutrivital,2,08/09/2026",
+  "Luis,Rojas,luis.rojas@gmail.com,912345678,70123456,Allpa2026,Fitfuel,0,",
+  "Carla,Diaz,carla.diaz@gmail.com,998877665,41236587,Allpa2026,,,",
+].join("\r\n");
+
+const descargarPlantilla = () => {
+  const blob = new Blob([PLANTILLA], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = "plantilla-clientes-allpa.csv";
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  URL.revokeObjectURL(url);
+};
+
+/**
+ * Carga masiva de clientes, con su plan y los envios que ya consumieron.
+ *
+ * Si una fila trae un problema el servidor no carga ninguna y devuelve la
+ * lista de filas a corregir; aca se muestra completa y se deja el archivo
+ * seleccionado, para corregir en Excel y volver a intentar sin buscarlo.
+ */
+export default function UploadUsersCsv({ onUploaded }) {
 
     const { baseUrl, token } = useAuthContext();
 
@@ -34,14 +69,14 @@ export default function UploadUsersCsv() {
         if (!file) return;
 
         if (!file.name.toLowerCase().endsWith(".csv")) {
-        setFeedback({ type: "error", message: "El archivo debe ser un .csv" });
-        setCsvFile(null);
-        return;
+            setFeedback({ type: "error", message: "El archivo debe ser un .csv. En Excel: Archivo, Guardar como, CSV." });
+            setCsvFile(null);
+            return;
         }
 
         setCsvFile(file);
         setFeedback(null);
-        // Permite volver a seleccionar el mismo archivo si el usuario lo quita y lo vuelve a poner
+        // Permite volver a elegir el mismo archivo despues de corregirlo.
         event.target.value = "";
     };
 
@@ -62,49 +97,63 @@ export default function UploadUsersCsv() {
         setFeedback(null);
 
         try {
-        const response = await axios.post(baseUrl+
-            "register/upload-massive-csv",
-            formData,
+            // Antes habia dos claves "headers" en este objeto y la segunda
+            // pisaba a la primera. Una sola, y el Content-Type lo pone el
+            // navegador con el boundary correcto del FormData.
+            const response = await axios.post(
+                `${baseUrl}register/upload-massive-csv`,
+                formData,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    onUploadProgress: (progressEvent) => {
+                        const percent = Math.round(
+                            (progressEvent.loaded * 100) / (progressEvent.total || 1)
+                        );
+                        setProgress(percent);
+                    },
+                }
+            );
 
-            {
-            headers: { "Content-Type": "multipart/form-data" },
-            headers: {"Authorization" : `Bearer ${token}`},
-            onUploadProgress: (progressEvent) => {
-                const percent = Math.round(
-                (progressEvent.loaded * 100) / (progressEvent.total || 1)
-                );
-                setProgress(percent);
-            },
-            }
-        );
-
-        setFeedback({
-            type: "success",
-            message: response.data?.data?.message || "Usuarios registrados correctamente.",
-        });
-        setCsvFile(null);
+            setFeedback({
+                type: "success",
+                message: response.data?.data?.message || response.data?.message || "Clientes cargados.",
+            });
+            setCsvFile(null);
+            if (onUploaded) onUploaded();
         } catch (error) {
-        setFeedback({
-            type: "error",
-            message:
-            error.response?.data?.message ||
-            "Ocurrió un error al subir el archivo.",
-        });
+            const cuerpo = error.response?.data;
+            setFeedback({
+                type: "error",
+                message:
+                    cuerpo?.message ||
+                    cuerpo?.data?.message ||
+                    "No pudimos subir el archivo. Revisa tu conexión e intenta de nuevo.",
+            });
         } finally {
-        setUploading(false);
+            setUploading(false);
         }
     };
 
     return (
         <div className="userPaCsv inlineFlex" style={{ flexDirection: "column", gap: 12 }}>
-            <div className="inlineFlex" style={{ alignItems: "center", gap: 8 }}>
+            <div className="inlineFlex" style={{ alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <Button
+                    variant="text"
+                    size="small"
+                    startIcon={<FileDownloadOutlinedIcon />}
+                    onClick={descargarPlantilla}
+                    disabled={uploading}
+                >
+                    Plantilla
+                </Button>
+
                 {csvFile ? (
-                <Chip
-                    label={csvFile.name}
-                    onDelete={uploading ? undefined : handleRemoveFile}
-                />
+                    <Chip
+                        label={csvFile.name}
+                        onDelete={uploading ? undefined : handleRemoveFile}
+                    />
                 ) : (
-                <Chip label="Ningún archivo seleccionado" variant="outlined" />
+                    <Chip label="Ningún archivo seleccionado" variant="outlined" />
                 )}
 
                 <Button
@@ -125,29 +174,32 @@ export default function UploadUsersCsv() {
                 </Button>
 
                 <Button
-                    component="label"
                     variant="outlined"
                     disabled={!csvFile || uploading}
                     onClick={handleUpload}
                     className="btnPrimary"
                 >
-                    Subir archivo
+                    {uploading ? "Subiendo…" : "Subir archivo"}
                 </Button>
             </div>
 
             {uploading && (
                 <div className="inlineBlock">
-                <LinearProgress
-                    variant="determinate"
-                    value={progress}
-                    aria-label="Subiendo archivo…"
-                />
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        aria-label="Subiendo archivo…"
+                    />
                 </div>
             )}
 
             {feedback && (
-                <Alert severity={feedback.type} onClose={() => setFeedback(null)}>
-                {feedback.message}
+                <Alert
+                    severity={feedback.type}
+                    onClose={() => setFeedback(null)}
+                    sx={{ whiteSpace: "pre-line", maxWidth: 720 }}
+                >
+                    {feedback.message}
                 </Alert>
             )}
         </div>

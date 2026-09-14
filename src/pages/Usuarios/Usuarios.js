@@ -328,7 +328,9 @@ const PageUsuarios = (props) => {
 
       </div>
       <div className="usPaBtn inlineFlex">
-        <UploadUsersCsv />
+        {/* Al terminar recarga la tabla: los clientes nuevos tienen que
+            verse sin refrescar la pagina. */}
+        <UploadUsersCsv onUploaded={getUsuarios} />
         <div 
           className="inlineFlex btnPrimary"
           onClick={()=>handleOpen(null,4)}
