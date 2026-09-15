@@ -37,7 +37,14 @@ const traducir = (d) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 6),
     porObjetivo: Object.entries(d.porObjetivo || {}).map(([label, value]) => ({
-      label: { LOSE: 'Bajar de peso', IMPROVE: 'Mejorar salud', GAIN: 'Subir de peso' }[label] || label,
+      // SIN_PERFIL es quien tiene plan pero no completo el perfil, como los
+      // clientes que entran por la carga masiva hasta que inician sesion.
+      label: {
+        LOSE: 'Bajar de peso',
+        IMPROVE: 'Mejorar salud',
+        GAIN: 'Subir de peso',
+        SIN_PERFIL: 'Sin perfil completo',
+      }[label] || label,
       value,
     })),
   };
@@ -74,7 +81,10 @@ export default function useMetricasNegocio() {
             ? 'Tu sesión no tiene permiso para ver estas métricas.'
             : !e?.response
               ? 'No pudimos conectarnos con el servidor.'
-              : 'El servidor no pudo calcular las métricas. Revisa que las tablas de analítica existan.'
+              // Antes decia que revisaras las tablas de analitica, y la causa
+              // real era otra: mandaba a buscar el problema en el lugar
+              // equivocado.
+              : 'El servidor no pudo calcular las métricas. Intenta de nuevo en unos minutos y, si sigue, avísanos.'
         );
       })
       .finally(() => { if (vivo) setCargando(false); });
