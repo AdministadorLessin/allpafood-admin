@@ -11,6 +11,37 @@ import * as XLSX from 'xlsx';
 moment.locale('es');
 
 /**
+ * Una tarjeta del tablero.
+ *
+ * Vive FUERA del componente de la pagina a proposito. Declarada adentro, cada
+ * render creaba un tipo de componente distinto y React desmontaba la tarjeta
+ * para volver a montarla. Como el nodo desaparecia justo al empezar a
+ * arrastrar —el propio onDragStart cambia el estado—, el navegador cancelaba
+ * el arrastre: se podia traer un punto desde la bandeja, que se pinta suelta,
+ * pero no mover uno que ya estaba en una columna ni reordenar dentro de ella.
+ *
+ * Por eso recibe todo por props en vez de tomarlo del entorno.
+ */
+const Punto = ({ p, motorizadoId, indice, apagado, moviendo, onInicio, onFin, onSoltar }) => (
+  <div
+    className={`ruPunto ${apagado ? 'ruPunto--apagado' : ''} ${moviendo ? 'ruPunto--moviendo' : ''}`}
+    draggable
+    onDragStart={() => onInicio(p.orderId, motorizadoId)}
+    onDragEnd={onFin}
+    onDragOver={(e) => e.preventDefault()}
+    onDrop={(e) => { e.stopPropagation(); onSoltar(motorizadoId, indice); }}
+    title={p.telefono || ''}
+  >
+    <span className="ruPunto__pos">{p.posicion ?? '·'}</span>
+    <span className="ruPunto__nom">{p.cliente}</span>
+    <span className="ruPunto__dir">
+      {p.direccion || 'sin direccion'}
+      {p.distrito ? ` · ${p.distrito}` : ''}
+    </span>
+  </div>
+);
+
+/**
  * Tablero de rutas del dia.
  *
  * Reemplaza la hoja de calculo donde operaciones lleva una columna por
@@ -302,27 +333,6 @@ const Rutas = () => {
 
   /* -------------------------------------------------------------- pintado */
 
-  const Punto = ({ p, motorizadoId, indice }) => (
-    <div
-      className={`ruPunto ${coincide(p) ? '' : 'ruPunto--apagado'} ${
-        arrastrando?.orderId === p.orderId ? 'ruPunto--moviendo' : ''
-      }`}
-      draggable
-      onDragStart={() => setArrastrando({ orderId: p.orderId, desde: motorizadoId })}
-      onDragEnd={() => setArrastrando(null)}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.stopPropagation(); soltarEn(motorizadoId, indice); }}
-      title={p.telefono || ''}
-    >
-      <span className="ruPunto__pos">{p.posicion ?? '·'}</span>
-      <span className="ruPunto__nom">{p.cliente}</span>
-      <span className="ruPunto__dir">
-        {p.direccion || 'sin direccion'}
-        {p.distrito ? ` · ${p.distrito}` : ''}
-      </span>
-    </div>
-  );
-
   const totalPuntos =
     (tablero?.rutas ?? []).reduce((n, r) => n + r.puntos.length, 0) +
     (tablero?.sinAsignar?.length ?? 0);
@@ -505,7 +515,17 @@ const Rutas = () => {
                   </div>
                   <div className="ruRuta__puntos">
                     {r.puntos.map((p, i) => (
-                      <Punto key={p.orderId} p={p} motorizadoId={r.motorizadoId} indice={i} />
+                      <Punto
+                        key={p.orderId}
+                        p={p}
+                        motorizadoId={r.motorizadoId}
+                        indice={i}
+                        apagado={!coincide(p)}
+                        moviendo={arrastrando?.orderId === p.orderId}
+                        onInicio={(orderId, desde) => setArrastrando({ orderId, desde })}
+                        onFin={() => setArrastrando(null)}
+                        onSoltar={soltarEn}
+                      />
                     ))}
                     {r.puntos.length === 0 && (
                       <p className="ruRuta__vacia">Sin puntos este dia</p>
