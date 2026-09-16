@@ -23,6 +23,9 @@ const VisuallyHiddenInput = styled("input")({
 
 /* La plantilla sale del propio panel para que nadie arme el archivo con las
    columnas en otro orden.
+   El correo va vacio en dos de los tres ejemplos a proposito: el cliente entra
+   con su celular, y un correo inventado es peor que ninguno porque el campo es
+   unico en la base y puede chocar con el de otra persona.
    "sep=," en la primera linea hace que Excel la abra en columnas aunque la
    maquina use punto y coma. El ejemplo va sin tildes a proposito: Excel
    ignora esa linea cuando el archivo trae marca de UTF-8, y sin la marca las
@@ -31,9 +34,9 @@ const VisuallyHiddenInput = styled("input")({
 const PLANTILLA = [
   "sep=,",
   "nombre,apellido,correo,telefono,documento,contrasena,plan,envios_consumidos,fecha_inicio",
-  "Ana,Torres,ana.torres@gmail.com,987654321,45678912,Allpa2026,Nutrivital,2,08/09/2026",
-  "Luis,Rojas,luis.rojas@gmail.com,912345678,70123456,Allpa2026,Fitfuel,0,",
-  "Carla,Diaz,carla.diaz@gmail.com,998877665,41236587,Allpa2026,,,",
+  "Ana,Torres,ana.torres@gmail.com,987654321,45678912,12345678,Nutrivital,2,08/09/2026",
+  "Luis,Rojas,,912345678,70123456,12345678,Fitfuel,0,",
+  "Carla,Diaz,,998877665,41236587,12345678,,,",
 ].join("\r\n");
 
 const descargarPlantilla = () => {
@@ -143,6 +146,7 @@ export default function UploadUsersCsv({ onUploaded }) {
                     startIcon={<FileDownloadOutlinedIcon />}
                     onClick={descargarPlantilla}
                     disabled={uploading}
+                    title="El correo es opcional: el cliente entra con su celular"
                 >
                     Plantilla
                 </Button>
