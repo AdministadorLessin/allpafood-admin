@@ -20,8 +20,9 @@ import DataState from "./../../components/ui/DataState";
 import useDataStatus from "./../../components/ui/useDataStatus";
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import ComandaPanel from '../../sections/comanda/ComandaPanel';
-import RestrictionsPanel from '../../sections/comanda/RestrictionsPanel';
+import TableroCocina from '../../sections/comanda/TableroCocina';
+import { armarCocina } from '../../sections/comanda/cocina';
+import BloqueEmpresas from '../../sections/comanda/BloqueEmpresas';
 import ConnectionStatus from '../../sections/comanda/ConnectionStatus';
 import DispatchTimer from '../../sections/comanda/DispatchTimer';
 import IconButton from '@mui/material/IconButton';
@@ -50,29 +51,29 @@ const ComandaPage = (props) => {
 
     const navigate = useNavigate();
     const [comanda,setComanda] = useState();
+    /* Detalle por pedido (el del rotulado): opcion, azucar, doble proteina y
+       restricciones. De aqui salen las bebidas sin azucar y la lista de cocina. */
+    const [detalle,setDetalle] = useState([]);
     const { token, baseUrl } = useAuthContext();
     const { status, start, done, fail } = useDataStatus();
     
-    const getWeekDays = () => {
+    /* Que semana se abre por defecto. Igual que siempre: la actual, y la
+       siguiente desde el viernes a las 6 pm. */
+    const semanaInicial = () => {
         const now = moment();
-
-        let monday;
-
         const day = now.isoWeekday(); // 1=Lunes ... 7=Domingo
-        const hour = now.hour();
+        if (day >= 6 || (day === 5 && now.hour() >= 18)) return 1;
+        return 0;
+    };
 
-        // Sábado o domingo -> siguiente semana
-        if (day >= 6) {
-            monday = now.clone().add(1, "week").startOf("isoWeek");
-        }
-        // Viernes después de las 6:00 pm -> siguiente semana
-        else if (day === 5 && hour >= 18) {
-            monday = now.clone().add(1, "week").startOf("isoWeek");
-        }
-        // Lunes a viernes antes de las 6 pm -> semana actual
-        else {
-            monday = now.clone().startOf("isoWeek");
-        }
+    /* Cuantas semanas adelante o atras se esta mirando. Antes no existia: la
+       pantalla mostraba cinco dias fijos y no habia forma de ver mas alla.
+       Los viernes hay que mirar el lunes siguiente para hacer las compras del
+       fin de semana, y eso obligaba a esperar a las 6 pm. */
+    const [desfaseSemana, setDesfaseSemana] = useState(semanaInicial());
+
+    const getWeekDays = (desfase = 0) => {
+        const monday = moment().add(desfase, "week").startOf("isoWeek");
 
         return Array.from({ length: 5 }, (_, index) => ({
             label: monday.clone().add(index, "days").format("dddd"),
@@ -81,13 +82,24 @@ const ComandaPage = (props) => {
         }));
     };
 
-    const weekDaysData = getWeekDays();
+    const weekDaysData = getWeekDays(semanaInicial());
     const todayDate = moment().format("YYYY-MM-DD");
     const initialSelectedDay =
         weekDaysData.find(day => day.date === todayDate)?.date ??
         weekDaysData[0].date;
 
-    const [weekDays] = useState(weekDaysData);
+    const [weekDays, setWeekDays] = useState(weekDaysData);
+
+    /* Moverse de semana: se recalculan los cinco dias y se cae en el lunes,
+       que es por donde se empieza a mirar una semana que todavia no llega. */
+    const moverSemana = (paso) => {
+        const nuevo = desfaseSemana + paso;
+        const dias = getWeekDays(nuevo);
+        setDesfaseSemana(nuevo);
+        setWeekDays(dias);
+        const hoy = moment().format("YYYY-MM-DD");
+        setSelectedDay(dias.find((d) => d.date === hoy)?.date ?? dias[0].date);
+    };
     const [selectedDay, setSelectedDay] = useState(initialSelectedDay);
 
     const selectedDayRef = useRef(selectedDay);
@@ -111,7 +123,9 @@ const ComandaPage = (props) => {
             }
         )
         .then((resp)=>{
-            
+            axios.get(`${baseUrl}admin/orders/export?date=${date}`, { headers: { Authorization: `Bearer ${token}` } })
+                .then((r) => setDetalle(Array.isArray(r.data?.data) ? r.data.data : (Array.isArray(r.data) ? r.data : [])))
+                .catch(() => setDetalle([]));
             setComanda(resp.data.data);
             setLastUpdate(new Date());
             done();
@@ -199,12 +213,13 @@ const ComandaPage = (props) => {
     return (
         <Box
             sx={{
-                minHeight: '100vh',
+                height: '100vh',
+                overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2.5,
-                p: 2.5,
-                bgcolor: '#0F2A1E',
+                gap: '1vw',
+                p: '1.1vw',
+                bgcolor: '#0B1F16',
             }}
         >
             {/* Cabecera: fecha viva, marca, dia y estado de la conexion */}
@@ -248,7 +263,7 @@ const ComandaPage = (props) => {
                         </IconButton>
                     </Tooltip>
 
-                    <Box component="img" src={logoAllpa} alt="Allpa Food" sx={{ width: 42, height: 'auto' }} />
+                    <Box component="img" src={logoAllpa} alt="Allpa Food" sx={{ height: 'max(44px, 3.6vw)', width: 'auto' }} />
                     <Box>
                         <Typography sx={{ fontSize: 21, fontWeight: 700, color: '#FCFCFA', lineHeight: 1.2 }}>
                             {today}
@@ -259,7 +274,23 @@ const ComandaPage = (props) => {
 
                 <DispatchTimer selectedDay={selectedDay} />
 
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* Moverse de semana. Los viernes hay que ver el lunes
+                        siguiente para hacer las compras del fin de semana. */}
+                    <Box
+                        component="button"
+                        onClick={() => moverSemana(-1)}
+                        title="Semana anterior"
+                        sx={{
+                            cursor: 'pointer', px: 1.6, py: 1.1, borderRadius: 999,
+                            fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
+                            border: '1px solid rgba(255,255,255,.16)',
+                            color: 'rgba(252,252,250,.75)', background: 'transparent',
+                        }}
+                    >
+                        ‹
+                    </Box>
+
                     {weekDays.map((day) => {
                         const active = selectedDay === day.date;
                         return (
@@ -288,6 +319,38 @@ const ComandaPage = (props) => {
                             </Box>
                         );
                     })}
+                
+                    <Box
+                        component="button"
+                        onClick={() => moverSemana(1)}
+                        title="Semana siguiente"
+                        sx={{
+                            cursor: 'pointer', px: 1.6, py: 1.1, borderRadius: 999,
+                            fontSize: 16, fontWeight: 700, fontFamily: 'inherit',
+                            border: '1px solid rgba(255,255,255,.16)',
+                            color: 'rgba(252,252,250,.75)', background: 'transparent',
+                        }}
+                    >
+                        ›
+                    </Box>
+
+                    {/* Sin esto es facil quedarse mirando otra semana sin
+                        darse cuenta: los dias se llaman igual. */}
+                    {desfaseSemana !== 0 && (
+                        <Box
+                            component="button"
+                            onClick={() => moverSemana(-desfaseSemana)}
+                            title="Volver a la semana de hoy"
+                            sx={{
+                                cursor: 'pointer', px: 2, py: 1.1, borderRadius: 999,
+                                fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit',
+                                border: '1px solid rgba(60,251,159,.45)',
+                                color: '#3CFB9F', background: 'rgba(60,251,159,.10)',
+                            }}
+                        >
+                            {desfaseSemana > 0 ? 'Semana siguiente' : 'Semana anterior'} · volver a hoy
+                        </Box>
+                    )}
                 </Box>
             </Box>
 
@@ -300,33 +363,12 @@ const ComandaPage = (props) => {
                 emptyTitle="No hay comanda para esta fecha"
                 emptyDescription="Elige otro día o espera a que se registren pedidos."
             >
-                <Box
-                    sx={{
-                        flex: 1,
-                        display: 'flex',
-                        gap: 2.5,
-                        alignItems: 'stretch',
-                        flexDirection: { xs: 'column', md: 'row' },
-                        minHeight: 0,
-                    }}
-                >
-                    <ComandaPanel
-                        title="Platos"
-                        list={comanda?.general}
-                        emptyText="Sin platos programados"
-                        numbered
-                    />
-                    <ComandaPanel
-                        title="Complementos"
-                        list={comanda?.complements}
-                        accent="#9BFDCE"
-                        emptyText="Sin complementos programados"
-                    />
-                    <RestrictionsPanel
-                        list={comanda?.restrictions}
-                        abreviarNombre={abreviarNombre}
-                    />
-                </Box>
+                <TableroCocina cocina={armarCocina(comanda, detalle)} />
+
+                {/* El desglose por empresa va despues del tablero: la cocina
+                    arma por olla, y recien al empacar importa a que oficina
+                    va cada taper. */}
+                <BloqueEmpresas fecha={selectedDay} platos={armarCocina(comanda, detalle).platos} />
             </DataState>
         </Box>
     )

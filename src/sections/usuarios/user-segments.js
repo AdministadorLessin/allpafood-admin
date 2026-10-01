@@ -10,9 +10,18 @@ export const SEGMENTS = [
   { value: 'porVencer', label: 'Por vencer' },
   { value: 'vencidos', label: 'Vencidos' },
   { value: 'sinPlan', label: 'Sin compras' },
+  // Los que se fueron. Aparte del resto: no son prospectos ni vencidos por
+  // renovar, son gente a la que ya no hay que escribirle.
+  { value: 'baja', label: 'De baja' },
 ];
 
 export function matchesSegment(user, segment) {
+  /* Quien esta de baja no aparece en ningun otro segmento. Si no, saldria en
+     "Por vencer" y terminarias escribiendole a alguien que ya se fue. */
+  const deBaja = user.statusNum === 0;
+  if (segment === 'baja') return deBaja;
+  if (deBaja) return false;
+
   if (segment === 'todos') return true;
   // "Clientes" es quien alguna vez compro, no quien tiene la cuenta
   // habilitada: con lo segundo el chip contaba a los 37 registrados.

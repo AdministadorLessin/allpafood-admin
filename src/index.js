@@ -6,6 +6,11 @@ import reportWebVitals from './reportWebVitals';
 
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme/theme';
+import { vigilarSesion } from './utils/sesion';
+
+// Antes de la primera peticion: si el token vencio, el panel lleva al ingreso
+// en vez de dejar al coordinador apretando botones que nunca llegan.
+vigilarSesion();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

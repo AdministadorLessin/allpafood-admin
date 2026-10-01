@@ -1,0 +1,252 @@
+/* Tarjetas del app. La lista muestra cada una como la va a ver el cliente
+   —su color y su titulo— y al lado el unico numero que decide si sirve: cuanta
+   gente la toca. */
+$tinta: #101F18; $suave: #5C6B63; $tenue: #8A968F; $linea: #E4EBE7;
+$fondo: #F6F9F7; $verde: #17603C; $rojo: #9B2C20;
+
+.tjAviso{
+    border: 1px solid #CFE7DA; background: #EDF9F2; color: #14432C;
+    border-radius: 12px; padding: 11px 14px; font-size: 13.5px;
+    margin-bottom: 16px; cursor: pointer;
+
+    &--rojo{ border-color: #F1C9C2; background: #FDF1EF; color: #8A2318; cursor: default; }
+}
+
+.tjCab{
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 18px; flex-wrap: wrap; margin-bottom: 18px;
+
+    p{ margin: 0; font-size: 13.5px; color: $suave; max-width: 560px; line-height: 1.45; }
+}
+
+.tjBtn{
+    border: 1px solid $linea; background: #FFFFFF; border-radius: 10px;
+    padding: 9px 16px; font: inherit; font-size: 13px; color: $tinta; cursor: pointer;
+
+    &:hover{ border-color: $verde; }
+    &--fuerte{ background: $tinta; border-color: $tinta; color: #FFFFFF; font-weight: 600;
+               &:hover{ background: #000; } }
+    &:disabled{ opacity: .6; cursor: default; }
+}
+
+.tjVacio{ color: $suave; font-size: 14px; }
+
+.tjLista{ display: grid; gap: 12px; }
+
+.tjFila{
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid $linea;
+    border-radius: 16px;
+    background: #FFFFFF;
+    padding: 12px 14px;
+
+    &--off{ opacity: .5; }
+}
+
+/* Como la ve el cliente, en chico. */
+.tjMini{
+    border-radius: 14px;
+    padding: 11px 13px;
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: $tinta;
+
+    span{
+        align-self: flex-start;
+        background: rgba(255,255,255,.7);
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 10.5px;
+        font-weight: 700;
+    }
+
+    b{ font-size: 13px; line-height: 1.2; }
+
+    &--oscura{
+        color: #FFFFFF;
+        span{ background: rgba(255,255,255,.2); }
+    }
+}
+
+.tjDatos{
+    min-width: 0;
+
+    &__quien{ margin: 0 0 4px; font-size: 13px; color: $tinta; }
+    &__texto{
+        margin: 0 0 6px; font-size: 12.5px; color: $suave; line-height: 1.4;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    &__num{ margin: 0; font-size: 12px; color: $tenue; font-variant-numeric: tabular-nums; }
+}
+
+.tjOk{ color: $verde; }
+
+.tjAcc{
+    display: flex; flex-direction: column; gap: 6px;
+
+    button{
+        border: 1px solid $linea; background: #FFFFFF; border-radius: 999px;
+        padding: 5px 14px; font: inherit; font-size: 12px; color: $suave; cursor: pointer;
+        white-space: nowrap;
+
+        &:hover{ border-color: $verde; color: $verde; }
+    }
+
+    &__borrar:hover{ border-color: $rojo !important; color: $rojo !important; }
+}
+
+.tjForma{
+    margin-top: 22px;
+    border: 1px solid $linea;
+    border-radius: 16px;
+    background: $fondo;
+    padding: 18px;
+
+    h3{ margin: 0 0 14px; font-size: 15.5px; color: $tinta; }
+
+    &__campos{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+    }
+
+    &__pie{ display: flex; gap: 9px; margin-top: 16px; }
+
+    label{
+        display: flex; flex-direction: column; gap: 5px;
+        font-size: 11.5px; font-weight: 600; color: $suave;
+        text-transform: uppercase; letter-spacing: .03em;
+    }
+
+    input, select, textarea{
+        border: 1px solid $linea; border-radius: 10px; padding: 9px 11px;
+        font: inherit; font-size: 13.5px; color: $tinta; background: #FFFFFF;
+        text-transform: none; letter-spacing: 0; font-weight: 400;
+
+        &:focus{ outline: 2px solid rgba(23,96,60,.25); border-color: $verde; }
+    }
+
+    textarea{ resize: vertical; }
+}
+
+.tjAncho{ grid-column: 1 / -1; }
+
+.tjPaleta{
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 14px;
+
+    span{
+        font-size: 11.5px; font-weight: 600; color: $suave;
+        text-transform: uppercase; letter-spacing: .03em; margin-right: 4px;
+    }
+
+    button{
+        width: 30px; height: 30px; border-radius: 9px;
+        border: 2px solid transparent; cursor: pointer;
+
+        &.act{ border-color: $tinta; }
+    }
+}
+
+.tjIco{
+    width: auto !important; height: auto !important;
+    padding: 5px 11px; border-radius: 999px !important;
+    border: 1px solid $linea !important; background: #FFFFFF;
+    font: inherit; font-size: 12px; color: $suave;
+
+    &.act{ border-color: $tinta !important; color: $tinta; font-weight: 600; }
+}
+
+.tjActiva{
+    display: flex !important; flex-direction: row !important; align-items: center; gap: 8px;
+    margin-top: 16px; text-transform: none !important; letter-spacing: 0 !important;
+    font-size: 13.5px !important; color: $tinta !important;
+
+    input{ width: 17px; height: 17px; }
+}
+
+@media (max-width: 720px){
+    .tjFila{ grid-template-columns: 1fr; }
+    .tjAcc{ flex-direction: row; }
+}
+
+/* Subir la imagen desde la computadora. El campo pedia una direccion de
+   internet y nadie tiene la foto publicada en otro sitio cuando esta armando
+   una tarjeta. */
+.tjImagen{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px dashed $linea;
+    border-radius: 12px;
+    padding: 12px;
+    background: #FFFFFF;
+
+    &__vista{
+        width: 74px;
+        height: 96px;
+        object-fit: cover;
+        border-radius: 9px;
+        flex-shrink: 0;
+    }
+
+    &__hueco{
+        display: grid;
+        place-items: center;
+        width: 74px; height: 96px;
+        border-radius: 9px;
+        background: $fondo;
+        color: $tenue;
+        font-size: 11px;
+        text-transform: none;
+        letter-spacing: 0;
+        flex-shrink: 0;
+    }
+
+    &__acc{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        small{
+            width: 100%;
+            font-size: 11.5px;
+            color: $tenue;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+            line-height: 1.35;
+        }
+    }
+
+    &__boton{
+        display: inline-block !important;
+        border: 1px solid $linea;
+        border-radius: 999px;
+        padding: 7px 15px;
+        font-size: 12.5px !important;
+        font-weight: 600;
+        color: $tinta !important;
+        background: #FFFFFF;
+        cursor: pointer;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+
+        &:hover{ border-color: $verde; color: $verde !important; }
+    }
+
+    &__quitar{
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 12.5px;
+        color: $rojo;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+}

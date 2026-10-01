@@ -11,3 +11,18 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Campos de texto dentro de la ficha del cliente: los mismos bordes y radios
+   que el resto del panel, sin arrastrar un componente entero para tres
+   inputs. */
+.fiInput{
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #E0E4E2;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #101F18;
+  background: #FFFFFF;
+}
+.fiInput:focus{ outline: none; border-color: #177A4C; }

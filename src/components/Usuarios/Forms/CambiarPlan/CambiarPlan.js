@@ -12,11 +12,24 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 import axios from 'axios';
 import { useAuthContext } from "../../../../context/authContext";
 
 import FormLabel from '@mui/material/FormLabel';
+
+/** Las comidas como las nombra la operacion, no como se llaman en la base. */
+const NOMBRE_COMIDAS = (tipos) => {
+  const nombres = { lunch: 'almuerzo', dinner: 'cena', breakfast: 'desayuno' };
+  if (!Array.isArray(tipos) || tipos.length === 0) return 'sin comidas definidas';
+  // El almuerzo primero, que es como se lee el dia.
+  return [...tipos]
+    .sort((a) => (a === 'lunch' ? -1 : 1))
+    .map((t) => nombres[t] || t)
+    .join(' y ');
+};
 
 const UsuarioFormCambiarPlan = ({ data, handleClose, getUsuarios, planList }) => {
 
@@ -55,21 +68,38 @@ const UsuarioFormCambiarPlan = ({ data, handleClose, getUsuarios, planList }) =>
 
   const onSubmitHandler = (dataForm) => {
 
+    if (!planActual) {
+      setErrorAxios(true);
+      setErrorMessage('Elige el plan al que quieres pasarlo.');
+      return;
+    }
+
     setLoadForm(true);
     setErrorAxios(false);
+
+    /* El campo se llama benefitId, no benefitsId.
+       Con el nombre equivocado el servidor lo recibia como nulo y dejaba
+       benefits_id apuntando al plan ANTERIOR, mientras los beneficios del
+       cliente ya eran los del nuevo. El panel seguia mostrando el plan viejo y
+       la pantalla de menus del cliente le ofrecia las comidas del viejo,
+       mientras su cuenta le exigia las del nuevo: un cliente pasado a Fitfuel
+       no podia completar ni un dia porque nunca le aparecia la cena. */
+    const beneficios = planActual.benefits || {};
 
     const newAdminData = {
         planInitDate: data.inicia,
         planExpirationDate: data.expira,
-        benefitsId: "",
+        benefitId: beneficios.id,
         consumedBenefits: {
-            extraBenefits: planActual.benefits?.extraBenefits,
-            complements: null,
-            principalBenefits: planActual.benefits?.principalBenefits,
+            extraBenefits: beneficios.extraBenefits,
+            complements: [],
+            principalBenefits: beneficios.principalBenefits,
             additional: [],
             orders: {
-                "total": 20,
-                "consumed": data.consumedHide
+                /* Los envios del plan nuevo, no un 20 escrito a mano: si
+                   manana se vende un plan de 12, este formulario le daria 20. */
+                total: beneficios.consumptionTotal ?? data.consumedTotal ?? 20,
+                consumed: data.consumedHide
             }
         },
         credits: null,
@@ -139,6 +169,24 @@ const UsuarioFormCambiarPlan = ({ data, handleClose, getUsuarios, planList }) =>
             </div>
           </Grid>
 
+          {/* Que significa el cambio, antes de guardarlo. Pasar a Fitfuel le
+              agrega la cena a todos sus dias; pasar a Nutrivital se la quita.
+              Sin esto el formulario es una lista de nombres sin consecuencias
+              visibles. */}
+          {planActual && (
+            <Grid size={{ xs: 12, sm: 12, md: 12 }}>
+              <Box sx={{ p: 1.75, borderRadius: 1.5, bgcolor: 'grey.100' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Queda con <b>{NOMBRE_COMIDAS(planActual.benefits?.principalBenefits)}</b>
+                  {' '}y {planActual.benefits?.consumptionTotal ?? data.consumedTotal} envíos.
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                  Mantiene sus {data.consumedHide} envíos consumidos y su fecha de vencimiento.
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+
           {/* Mensaje de Error */}
           {errorAxios && (
             <Grid size={{ xs: 12, sm: 12, md: 12 }}>
@@ -153,7 +201,7 @@ const UsuarioFormCambiarPlan = ({ data, handleClose, getUsuarios, planList }) =>
               disabled={loadForm}
               className={loadForm ? "btnPrimary btnDisabled" : "btnPrimary"}
             >
-              {loadForm ? "Guardando..." : "Actualizando plan"}
+              {loadForm ? "Guardando…" : "Cambiar de plan"}
             </button>
           </Grid>
         </Grid>

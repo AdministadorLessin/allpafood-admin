@@ -22,7 +22,8 @@ const CULPA_CLIENTE = [
   'No me dejaron entrar',
 ];
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+// En hora de Lima: toISOString daba el dia siguiente despues de las 7 p.m.
+const hoy = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 /**
  * Las entregas que hoy no se pudieron dejar.

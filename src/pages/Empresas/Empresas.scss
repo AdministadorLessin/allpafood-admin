@@ -1,0 +1,382 @@
+/* Empresas. Una lista corta arriba, y abajo la empresa elegida con sus dos
+   preguntas: quien eligio hoy, y cuanto se factura el viernes. */
+$tinta:   #101F18;
+$suave:   #5C6B63;
+$tenue:   #8A968F;
+$linea:   #E4EBE7;
+$fondo:   #F6F9F7;
+$menta:   #3CFB9F;
+$verde:   #17603C;
+$naranja: #C2410C;
+
+.emAviso{
+    border: 1px solid #CFE7DA;
+    background: #EDF9F2;
+    color: #14432C;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-size: 13.5px;
+    margin-bottom: 16px;
+    cursor: pointer;
+
+    b{ font-weight: 700; }
+
+    &--rojo{ border-color: #F1C9C2; background: #FDF1EF; color: #8A2318; cursor: default; }
+    &--naranja{ border-color: #F6D9B8; background: #FFF6EC; color: #8A4A12; cursor: default; }
+}
+
+.emVacio{ color: $suave; font-size: 14px; }
+
+/* Lista de empresas. Solo aparece cuando hay mas de una: con una sola, una
+   fila de tarjetas de un elemento es ruido. */
+.emLista{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.emTarjeta{
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    border: 1px solid $linea;
+    border-radius: 14px;
+    background: #FFFFFF;
+    padding: 14px 16px;
+    cursor: pointer;
+    font: inherit;
+
+    b{ display: block; font-size: 14.5px; color: $tinta; }
+    small{ display: block; margin-top: 2px; font-size: 12px; color: $tenue; }
+
+    &__marca{ position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+
+    &__monto{
+        display: block;
+        margin-top: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: $tinta;
+
+        i{ display: block; font-style: normal; font-size: 11px; font-weight: 400; color: $tenue; }
+    }
+
+    &--activa{ border-color: $verde; box-shadow: 0 0 0 1px $verde inset; }
+}
+
+.emCab{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 14px;
+
+    h2{ margin: 0; font-size: 21px; color: $tinta; }
+    p{ margin: 3px 0 0; font-size: 13px; color: $suave; }
+
+    &__nums{
+        display: flex;
+        gap: 22px;
+
+        span{ text-align: right; }
+        b{ display: block; font-size: 19px; color: $tinta; font-variant-numeric: tabular-nums; }
+        i{ font-style: normal; font-size: 11.5px; color: $tenue; }
+    }
+}
+
+.emTabs{
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid $linea;
+    margin-bottom: 18px;
+
+    button{
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 13.5px;
+        color: $suave;
+        padding: 9px 14px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+
+        &.act{ color: $tinta; font-weight: 600; border-bottom-color: $verde; }
+    }
+}
+
+.emPanel{
+    &__cab{
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+
+        /* Solo la primera letra. Con text-transform: capitalize el titulo
+           salia "Almuerzo Del Martes 29 De Setiembre", que no es espanol. */
+        h3{
+            margin: 0;
+            font-size: 15.5px;
+            color: $tinta;
+
+            &::first-letter{ text-transform: uppercase; }
+        }
+        p{ margin: 3px 0 0; font-size: 12.5px; color: $tenue; }
+    }
+}
+
+.emNav{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    button{
+        border: 1px solid $linea;
+        background: #FFFFFF;
+        border-radius: 9px;
+        padding: 6px 11px;
+        font: inherit;
+        font-size: 12.5px;
+        color: $tinta;
+        cursor: pointer;
+
+        &:hover{ border-color: $verde; }
+    }
+}
+
+/* El equipo. Una fila por persona y una sola cosa que mirar: si ya eligio. */
+.emEquipo{
+    list-style: none;
+    margin: 0 0 22px;
+    padding: 0;
+    border: 1px solid $linea;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #FFFFFF;
+
+    li{
+        display: grid;
+        grid-template-columns: minmax(0, 190px) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        padding: 11px 14px;
+        border-bottom: 1px solid $linea;
+
+        &:last-child{ border-bottom: 0; }
+    }
+}
+
+.emFila{
+    &__quien{
+        min-width: 0;
+        b{ display: block; font-size: 13.5px; color: $tinta;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        small{ font-size: 11.5px; color: $tenue; }
+    }
+
+    &__que{ min-width: 0; }
+
+    &__acc button{
+        border: 1px solid $linea;
+        background: #FFFFFF;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font: inherit;
+        font-size: 12px;
+        color: $suave;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover{ border-color: $naranja; color: $naranja; }
+    }
+
+    &--baja{ opacity: .5; }
+    &--fuera{ background: $fondo; }
+}
+
+.emChip{
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &--ok{ background: #E8F6EE; color: $verde; }
+    &--falta{ background: #FFF6EC; color: #8A4A12; }
+    &--fuera{ background: #EEF1EF; color: $suave; }
+}
+
+/* Alta de colaborador. Va al pie del equipo a proposito: es lo que se hace
+   una vez al mes, no lo que se viene a mirar todos los dias. */
+.emAlta{
+    border: 1px dashed $linea;
+    border-radius: 14px;
+    padding: 16px;
+    background: $fondo;
+
+    h4{ margin: 0 0 11px; font-size: 13.5px; color: $tinta; }
+    small{ display: block; margin-top: 9px; font-size: 11.5px; color: $tenue; }
+
+    &__campos{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 9px;
+
+        input{
+            border: 1px solid $linea;
+            border-radius: 10px;
+            padding: 9px 11px;
+            font: inherit;
+            font-size: 13px;
+            background: #FFFFFF;
+
+            &:focus{ outline: 2px solid rgba(23,96,60,.25); border-color: $verde; }
+        }
+
+        button{
+            border: 0;
+            border-radius: 10px;
+            background: $tinta;
+            color: #FFFFFF;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 16px;
+            cursor: pointer;
+
+            &:disabled{ opacity: .6; cursor: default; }
+        }
+    }
+}
+
+.emTabla{
+    width: 100%;
+    border-collapse: collapse;
+    background: #FFFFFF;
+    border: 1px solid $linea;
+    border-radius: 14px;
+    overflow: hidden;
+    font-size: 13.5px;
+
+    th{
+        text-align: left;
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: $tenue;
+        font-weight: 600;
+        padding: 10px 14px;
+        border-bottom: 1px solid $linea;
+    }
+
+    td{
+        padding: 10px 14px;
+        border-bottom: 1px solid $linea;
+        color: $tinta;
+        font-variant-numeric: tabular-nums;
+    }
+
+    tr:last-child td{ border-bottom: 0; }
+    th:not(:first-child), td:not(:first-child){ text-align: right; width: 110px; }
+}
+
+.emTotales{
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 14px 4px 0;
+    font-size: 13px;
+    color: $suave;
+
+    b{ color: $tinta; font-variant-numeric: tabular-nums; }
+
+    &__total{
+        font-size: 15px;
+        b{ font-size: 18px; }
+    }
+}
+
+.emAcciones{
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin: 16px 0 24px;
+}
+
+.emBtn{
+    border: 1px solid $linea;
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font: inherit;
+    font-size: 13px;
+    color: $tinta;
+    cursor: pointer;
+
+    &:hover{ border-color: $verde; }
+
+    &--fuerte{
+        background: $tinta;
+        border-color: $tinta;
+        color: #FFFFFF;
+        font-weight: 600;
+
+        &:hover{ background: #000000; }
+    }
+}
+
+.emCierres{
+    h4{ margin: 0 0 10px; font-size: 13.5px; color: $tinta; }
+
+    ul{ list-style: none; margin: 0; padding: 0; }
+
+    li{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        border: 1px solid $linea;
+        border-radius: 12px;
+        background: #FFFFFF;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: $suave;
+
+        b{ color: $tinta; font-variant-numeric: tabular-nums; }
+
+        button{
+            border: 1px solid $linea;
+            background: #FFFFFF;
+            border-radius: 999px;
+            padding: 5px 12px;
+            font: inherit;
+            font-size: 12px;
+            color: $suave;
+            cursor: pointer;
+
+            &:hover{ border-color: $verde; color: $verde; }
+        }
+    }
+}
+
+@media (max-width: 720px){
+    .emEquipo li{
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        .emFila__que{ grid-column: 1 / -1; order: 3; }
+    }
+
+    .emCab__nums{ gap: 16px; }
+
+    .emTabla{ display: block; overflow-x: auto; }
+}

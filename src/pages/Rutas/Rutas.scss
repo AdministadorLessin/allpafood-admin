@@ -137,12 +137,28 @@
         background:var(--surface-alt); font-variant-numeric:tabular-nums;
     }
     &__nom{ display:block; font-weight:700; font-size:12.5px; color:var(--ink); line-height:1.25; }
+    /* Cuantos tapers van a esa puerta. Solo aparece cuando es mas de uno, que
+       es la excepcion: marcarlo todo con "x1" convertiria el dato en ruido. */
+    &__x{
+        display:inline-flex; align-items:center; margin-left:6px;
+        height:15px; padding:0 5px; border-radius:var(--r-pill);
+        font-size:10.5px; font-weight:800; letter-spacing:.02em;
+        color:var(--mint-deep); background:var(--mint-soft, rgba(53,240,154,.16));
+        font-variant-numeric:tabular-nums;
+    }
     &__dir{
         display:block; font-size:11.5px; color:var(--ink-soft); line-height:1.3;
         white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     /* Lo que no coincide con la busqueda no se oculta: se apaga. Ocultarlo
        haria perder la referencia de donde esta cada cosa en el tablero. */
+    /* Cliente nuevo o que cambio de direccion: en ambar, para ir directo a
+       ellos sin buscar entre los que ya estan en su ruta de siempre. */
+    &--nuevo{ background:#FFF6E0; border-color:#E9B949; }
+    &__nov{
+        display:block; margin-top:3px; font-size:10.5px; font-weight:800;
+        letter-spacing:.02em; color:#8A5A00;
+    }
     &--apagado{ opacity:.28; }
     &--moviendo{ border-color:var(--mint-deep); border-style:dashed; background:var(--surface-alt); }
 }
@@ -190,4 +206,94 @@
     &--no{
         flex:0 0 auto; width:auto; margin-top:0;
     }
+}
+
+/* ── Número de ruta ────────────────────────────────────────────────────────
+   El coordinador les habla por número ("la 5"), pero el tablero solo mostraba
+   el nombre. */
+.ruRuta__num{
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-right: 7px;
+    border-radius: 8px;
+    background: #101F18;
+    color: #35F09A;
+    font-size: 12px;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+/* La dirección, ahora enlace al mapa. */
+.ruPunto__dir--mapa{
+    text-decoration: none;
+    color: inherit;
+    cursor: alias;
+    &:hover{ text-decoration: underline; color: #177A4C; }
+}
+
+/* Cambiar de moto sin arrastrar. */
+.ruPunto__mover{
+    width: 100%;
+    margin-top: 6px;
+    padding: 5px 7px;
+    border: 1px solid #E4EBE7;
+    border-radius: 9px;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: #5C6B63;
+    cursor: pointer;
+    &:hover{ border-color: #177A4C; color: #101F18; }
+}
+
+/* El aviso de salida de toda la jornada: la única acción de la barra que le
+   llega al cliente, así que se distingue del resto. */
+.ruAvisarTodas{
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #35F09A;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    color: #101F18;
+    cursor: pointer;
+    &:hover{ filter: brightness(.96); }
+}
+
+/* Cuando la propuesta viene de una zona dibujada y no de medir distancias:
+   es una decisión ya tomada, no una pista. */
+.ruSug--zona .ruSug__txt{ color: #177A4C; font-weight: 700; }
+.ruSug--zona .ruSug__val{ color: #101F18; }
+
+/* Empresas dentro del tablero de rutas.
+   Diez colaboradores de la misma oficina son diez tarjetas, porque cada una
+   es un pedido con su nombre y su opcion, pero una sola parada. La marca en
+   la tarjeta y el resumen en la cabecera lo dejan claro sin tener que contar. */
+.ruPunto__emp{
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--emp, #3CFB9F) 18%, transparent);
+    color: var(--emp, #3CFB9F);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.ruEmpresa{
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px dashed rgba(23,122,76,.45);
+    background: rgba(60,251,159,.08);
+    color: #17603C;
+    font-size: 11.5px;
+    font-weight: 700;
 }

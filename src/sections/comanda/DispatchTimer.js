@@ -93,7 +93,7 @@ export default function DispatchTimer({ selectedDay }) {
     >
       <Typography
         sx={{
-          fontSize: timer.state === 'done' ? 24 : 38,
+          fontSize: timer.state === 'done' ? 'max(24px, 2.2vw)' : 'max(38px, 4.6vw)',
           fontWeight: 800,
           lineHeight: 1.05,
           color,
@@ -103,7 +103,7 @@ export default function DispatchTimer({ selectedDay }) {
       >
         {timer.label}
       </Typography>
-      <Typography sx={{ fontSize: 13, color: 'rgba(252,252,250,.55)' }}>
+      <Typography sx={{ fontSize: 'max(13px, 1.05vw)', fontWeight: 700, color: 'rgba(252,252,250,.6)' }}>
         {timer.detail}
       </Typography>
     </Box>

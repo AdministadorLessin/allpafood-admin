@@ -7,16 +7,22 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { groupByType } from './comanda-groups';
+import { groupByType, mergeByDish } from './comanda-groups';
 
-export default function ComandaPanel({ title, list, accent = '#3CFB9F', emptyText, numbered = false }) {
-  const groups = groupByType(list);
+/**
+ * @param unirPlatos junta el mismo plato aunque venga como almuerzo y como
+ *                   cena. Va en el panel de platos, donde lo que importa es
+ *                   cuanto se cocina de cada olla. Los complementos no lo
+ *                   usan: una bebida y un snack no son el mismo producto.
+ */
+export default function ComandaPanel({ title, list, accent = '#3CFB9F', emptyText, numbered = false, unirPlatos = false, ancho = 1 }) {
+  const groups = groupByType(unirPlatos ? mergeByDish(list) : list);
   const total = groups.reduce((sum, group) => sum + group.total, 0);
 
   return (
     <Box
       sx={{
-        flex: 1,
+        flex: ancho,
         minWidth: 0,
         display: 'flex',
         flexDirection: 'column',

@@ -1,0 +1,332 @@
+/* Mapa de cobertura. El mapa manda: ocupa todo lo que sobra y el panel de al
+   lado es estrecho, porque su trabajo es filtrar, no competir. */
+.cobBarra{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+}
+
+.cobTabs{ display: flex; gap: 6px; }
+
+.cobTab{
+    padding: 8px 16px;
+    border: 1px solid #E4EBE7;
+    border-radius: 999px;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #5C6B63;
+    cursor: pointer;
+
+    &--on{
+        background: #101F18;
+        border-color: #101F18;
+        color: #FFFFFF;
+    }
+}
+
+.cobFecha{
+    padding: 8px 12px;
+    border: 1px solid #E4EBE7;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: #101F18;
+}
+
+.cobConteo{ margin-left: auto; font-size: 13px; color: #5C6B63; }
+
+.cobError{
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #FDECEA;
+    color: #9B2C20;
+    font-size: 13.5px;
+}
+
+.cobCuerpo{
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+
+    @media (max-width: 900px){ grid-template-columns: 1fr; }
+}
+
+.cobLado{
+    background: #FFFFFF;
+    border: 1px solid #E4EBE7;
+    border-radius: 16px;
+    padding: 14px;
+    max-height: 72vh;
+    overflow-y: auto;
+
+    &__tit{
+        margin: 0 0 8px;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: #8A968F;
+
+        &--sep{ margin-top: 18px; }
+    }
+}
+
+.cobMoto{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 7px 8px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    color: #101F18;
+    cursor: pointer;
+    text-align: left;
+
+    i{ flex: 0 0 auto; width: 11px; height: 11px; border-radius: 50%; }
+    span{ flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    b{ font-size: 12.5px; color: #5C6B63; }
+
+    &:hover{ background: #F3F6F4; }
+    &--on{ background: #101F18; color: #FFFFFF; b{ color: #B9C6BF; } }
+}
+
+.cobTodos{
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px;
+    border: 1px solid #E4EBE7;
+    border-radius: 10px;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: #177A4C;
+    cursor: pointer;
+}
+
+.cobDist{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 8px;
+    font-size: 12.5px;
+    color: #5C6B63;
+
+    b{ color: #101F18; }
+}
+
+.cobMapa{
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #E4EBE7;
+
+    &__lienzo{ width: 100%; height: 72vh; min-height: 420px; }
+}
+
+/* Un círculo pequeño: con casi trescientos puntos, los pines se tapan entre
+   sí y el mapa deja de leerse. */
+.cobPunto{
+    display: block;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 1px 4px rgba(16,31,24,.45);
+    cursor: pointer;
+}
+
+.cobFicha{
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    max-width: 290px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #FFFFFF;
+    box-shadow: 0 14px 34px -18px rgba(16,31,24,.55);
+
+    b{ display: block; font-size: 14.5px; color: #101F18; }
+    small{ display: block; margin-top: 3px; font-size: 12.5px; color: #5C6B63; line-height: 1.4; }
+    a{ display: inline-block; margin-top: 9px; font-size: 12.5px; font-weight: 700; color: #177A4C; }
+
+    &__moto{ display: block; margin-top: 7px; font-size: 12.5px; font-weight: 700; }
+
+    &__x{
+        position: absolute;
+        top: 6px; right: 8px;
+        border: 0; background: transparent;
+        font-size: 19px; line-height: 1; color: #8A968F; cursor: pointer;
+    }
+}
+
+/* ── Buscador de cliente ──────────────────────────────────────────────────
+   Es lo que el vendedor usa veinte veces al día: "¿a este dónde le llega y
+   quién se lo lleva?". Va en la barra, no escondido. */
+.cobBuscar{
+    display: flex;
+    gap: 6px;
+    flex: 1 1 320px;
+    min-width: 260px;
+
+    input{
+        flex: 1;
+        min-width: 0;
+        padding: 8px 14px;
+        border: 1px solid #E4EBE7;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 13.5px;
+        color: #101F18;
+
+        &:focus{ outline: none; border-color: #177A4C; }
+    }
+
+    button{
+        padding: 8px 16px;
+        border: 0;
+        border-radius: 999px;
+        background: #101F18;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: #FFFFFF;
+        cursor: pointer;
+    }
+
+    &__x{
+        background: transparent !important;
+        color: #5C6B63 !important;
+        border: 1px solid #E4EBE7 !important;
+    }
+}
+
+.cobResultados{
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 0 6px;
+    margin: 0 0 12px;
+
+    &__nada{ margin: 0; font-size: 13px; color: #5C6B63; }
+}
+
+.cobRes{
+    flex: 0 0 auto;
+    max-width: 280px;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid #E4EBE7;
+    border-radius: 14px;
+    background: #FFFFFF;
+    font-family: inherit;
+    cursor: pointer;
+
+    b{ display: block; font-size: 13.5px; color: #101F18; }
+    small{ display: block; margin-top: 2px; font-size: 12px; color: #5C6B63;
+           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    span{ display: block; margin-top: 5px; font-size: 12px; font-weight: 600; color: #177A4C; }
+
+    &:hover{ border-color: #177A4C; }
+}
+
+/* ── Control de zonas ─────────────────────────────────────────────────── */
+.cobZonas{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 12px;
+}
+
+.cobCheck{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: #101F18;
+    cursor: pointer;
+}
+
+.cobBtn{
+    padding: 7px 15px;
+    border: 0;
+    border-radius: 999px;
+    background: #3CFB9F;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #08301D;
+    cursor: pointer;
+
+    &--suave{
+        background: #FFFFFF;
+        border: 1px solid #E4EBE7;
+        color: #5C6B63;
+    }
+    &:disabled{ opacity: .6; cursor: default; }
+}
+
+.cobAviso{ font-size: 12.5px; color: #177A4C; }
+
+/* Importar las zonas del mapa de Google del CEO. */
+.cobEnlace{
+    flex: 1 1 280px;
+    min-width: 200px;
+    padding: 7px 13px;
+    border: 1px solid #E4EBE7;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: #101F18;
+
+    &:focus{ outline: none; border-color: #177A4C; }
+}
+
+.cobImport{
+    border: 1px solid #E4EBE7;
+    border-radius: 14px;
+    background: #FFFFFF;
+    padding: 12px 14px;
+    margin: 0 0 14px;
+
+    &__fila{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px 0;
+        border-bottom: 1px solid #F0F4F2;
+
+        &:last-of-type{ border-bottom: 0; }
+
+        b{ flex: 0 0 150px; font-size: 13.5px; color: #101F18; }
+        small{ flex: 0 0 80px; font-size: 12px; color: #8A968F; }
+
+        select{
+            flex: 1 1 200px;
+            padding: 7px 11px;
+            border: 1px solid #E4EBE7;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            color: #101F18;
+            background: #FFFFFF;
+        }
+    }
+
+    &__ok{
+        font-size: 12px;
+        font-weight: 700;
+        color: #17603C;
+    }
+}

@@ -1,0 +1,106 @@
+/* Va dentro de la comanda, que se proyecta en la TV de cocina: fondo oscuro,
+   numeros grandes y nada que haya que acercarse a leer. */
+.cmEmp{
+    margin-top: 26px;
+
+    &__tit{
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        color: rgba(255,255,255,.72);
+        text-transform: uppercase;
+    }
+
+    &__lista{
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 14px;
+    }
+
+    &__card{
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 16px;
+        background: rgba(255,255,255,.04);
+        padding: 16px 18px 14px;
+
+        &::before{
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--emp, #3CFB9F);
+        }
+
+        header{
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 11px;
+
+            b{ font-size: 18px; color: #FFFFFF; }
+            span{ font-size: 13px; color: rgba(255,255,255,.62); white-space: nowrap; }
+        }
+    }
+
+    &__platos{
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        li{
+            display: grid;
+            grid-template-columns: 82px minmax(0, 1fr) 42px;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+
+            &:last-child{ border-bottom: 0; }
+        }
+    }
+
+    &__op{
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--emp, #3CFB9F);
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    &__nom{
+        font-size: 14px;
+        color: rgba(255,255,255,.90);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__cant{
+        font-size: 20px;
+        font-weight: 800;
+        color: #FFFFFF;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__extras{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin: 11px 0 0;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255,255,255,.09);
+        font-size: 12.5px;
+        color: rgba(255,255,255,.62);
+
+        i{
+            font-style: normal;
+            font-weight: 700;
+            color: rgba(255,255,255,.82);
+        }
+    }
+}

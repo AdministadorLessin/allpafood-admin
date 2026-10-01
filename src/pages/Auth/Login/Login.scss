@@ -1,64 +1,259 @@
-.loginPage{
+/* Entrada al panel.
+ *
+ * Pensado para monitor, que es donde se usa: la pantalla se parte en dos —la
+ * cocina a la izquierda, el formulario a la derecha—. La foto no se esconde
+ * detras de un velo ni se recorta en un circulito: ocupa media pantalla y se
+ * ve, porque es lo que vende Allpa y lo que distingue este panel de cualquier
+ * consola de software.
+ *
+ * El verde profundo del lado derecho es el mismo de la pantalla de cocina:
+ * quien entra aqui mira esa pantalla todo el dia. */
+
+.afLogin{
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    background: #0E2419;
+    color: #F4F8F5;
+    font-family: var(--font-sans);
+}
+
+/* --- Lado de la cocina --- */
+.afLogin__foto{
+    position: relative;
+    overflow: hidden;
+    /* Si la foto faltara, el lado no queda en blanco: se cae a la misma luz
+       verde que el resto de la marca. */
+    background:
+        radial-gradient(120% 90% at 20% 15%, rgba(60,251,159,.22), transparent 60%),
+        radial-gradient(100% 80% at 85% 90%, rgba(15,139,84,.45), transparent 60%),
+        #0B1E14;
+    img{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Apenas bajada: lo justo para que el texto de abajo se lea, sin
+           apagar los colores del plato, que son el motivo de ponerla. */
+        filter: saturate(1.05) brightness(.94);
+    }
+}
+
+/* Degradados sobre la foto: uno abajo para sostener el texto, otro en el
+   borde derecho para que la union con el formulario no sea un corte seco. */
+.afLogin__foto::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgba(8,20,14,.93) 0%, rgba(8,20,14,.55) 22%, rgba(8,20,14,.12) 48%, transparent 66%),
+        linear-gradient(to right, transparent 80%, rgba(14,36,25,.85) 100%);
+}
+
+.afLogin__sobreFoto{
+    position: absolute;
+    left: 48px;
+    right: 48px;
+    bottom: 44px;
+    z-index: 2;
+}
+/* La fecha, suelta y pequeña sobre la frase: es contexto, no dato de trabajo,
+   y dentro de la pildora hacia que el reloj se saliera de pantalla. */
+.afLogin__fecha{
+    margin: 0 0 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: rgba(255,255,255,.78);
+}
+
+.afLogin__frase{
+    margin: 0 0 14px;
+    max-width: 15ch;
+    font-size: clamp(30px, 3.2vw, 46px);
+    font-weight: 300;
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    color: #FFFFFF;
+    text-wrap: balance;
+    b{ font-weight: 600; }
+}
+
+/* El reloj de la operacion, encima de la cocina real. No es adorno: es el
+   mismo horario que gobierna la comanda, visible antes de escribir la clave. */
+.afLogin__reloj{
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 16px;
+    border-radius: var(--r-pill);
+    background: rgba(8,20,14,.55);
+    border: 1px solid rgba(60,251,159,.30);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 100%;
+    color: rgba(255,255,255,.82);
+    font-variant-numeric: tabular-nums;
+    i{
+        flex: 0 0 auto;
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--mint);
+        box-shadow: 0 0 0 4px rgba(60,251,159,.18);
+        font-style: normal;
+    }
+    b{ color: var(--mint); font-weight: 700; }
+}
+
+/* --- Lado del formulario --- */
+.afLogin__lado{
+    position: relative;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0px;
+    padding: 40px;
+    overflow: hidden;
+}
+.afLogin__lado::before{
+    content: '';
+    position: absolute;
+    width: 460px; height: 460px;
+    right: -180px; top: -160px;
+    border-radius: 50%;
+    background: rgba(60,251,159,.14);
+    filter: blur(90px);
+    pointer-events: none;
 }
 
-
-.loginFormBox{
-    width: 90%;
-    max-width: 550px;
-    box-shadow: 2px 2px 40px 0px rgba(0,0,0,.15);
-    padding: 20px 40px 20px 40px;
-    border-radius: 20px;
-    flex-direction: column;
-    background: white;
+.afLogin__col{
     position: relative;
-    z-index: 22;
-    h2{
-        margin-bottom: 20px;
-    }
+    z-index: 2;
+    width: 100%;
+    max-width: 352px;
 }
 
-.loginForm{
-    flex-direction: column;
-    .MuiFormControl-root{
-        margin-bottom: 20px;
-        border-radius: 25px;
-    }
+.afLogin__iso{
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    opacity: .95;
+    margin-bottom: 26px;
 }
 
-.textFieldAdminLogin{
-    &::after{
-        content: '';
-        width: 24px;
-        height: 24px;
-        position: absolute;
-        top: 0px;
-        bottom: 0px;
-        margin-top: auto;
-        margin-bottom: auto;
-        left: 20px;
+/* El color va explicito: las hojas del panel definen h1/h2 en verde oscuro y
+   sobre este fondo saldrian negros. */
+.afLogin__tit{
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    color: #F4F8F5;
+}
+.afLogin__baja{
+    margin: 0 0 30px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: rgba(244,248,245,.5);
+}
+
+.afLogin__campo{
+    margin-bottom: 16px;
+    label{
         display: block;
-        opacity: 1;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        color: rgba(244,248,245,.45);
     }
-}
-
-.loginTextFieldUser{
-    .MuiFormControl-root{
-        &::after{
-            background: url('../../../assets/img/ico_usuario.svg') center no-repeat;
-            background-size: auto;
+    input{
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 50px;
+        padding: 0 16px;
+        border-radius: 14px;
+        border: 1.5px solid rgba(255,255,255,.13);
+        background: rgba(255,255,255,.05);
+        color: #F4F8F5;
+        font-family: inherit;
+        font-size: 15px;
+        outline: none;
+        transition: border-color .15s, background .15s;
+        &::placeholder{ color: rgba(244,248,245,.3); }
+        &:focus{
+            border-color: var(--mint);
+            background: rgba(255,255,255,.08);
         }
     }
-
+    &--mal input{ border-color: #FF8A7A; }
 }
 
-.loginTextFieldClave{
-    .MuiFormControl-root{
-        &::after{
-            background: url('../../../assets/img/ico_clave.svg') center no-repeat;
-            background-size: auto;
-        }
-    }
+.afLogin__ver{
+    display: block;
+    margin: 9px 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(244,248,245,.45);
+    cursor: pointer;
+    &:hover{ color: rgba(244,248,245,.8); }
+}
+
+.afLogin__btn{
+    width: 100%;
+    min-height: 52px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: var(--mint);
+    color: #08301D;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s, filter .15s;
+    &:hover:not(:disabled){ filter: brightness(1.06); }
+    &:active:not(:disabled){ transform: scale(.985); }
+    &:disabled{ opacity: .55; cursor: default; }
+}
+
+.afLogin__error{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 16px 0 0;
+    padding: 11px 13px;
+    border-radius: 12px;
+    background: rgba(255,138,122,.12);
+    border: 1px solid rgba(255,138,122,.3);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #FFC7BE;
+    svg{ width: 16px; height: 16px; flex: 0 0 auto; }
+}
+
+.afLogin__pie{
+    margin: 34px 0 0;
+    font-size: 11.5px;
+    color: rgba(244,248,245,.32);
+}
+
+/* --- Pantallas angostas --- */
+/* La foto pasa a ser una franja arriba: sigue estando —es lo que da caracter—
+   pero sin comerse la pantalla donde se escribe. */
+@media (max-width: 900px){
+    .afLogin{ grid-template-columns: 1fr; grid-template-rows: 34vh auto; }
+    .afLogin__sobreFoto{ left: 24px; right: 24px; bottom: 22px; }
+    .afLogin__frase{ font-size: 26px; margin-bottom: 12px; }
+    .afLogin__lado{ padding: 34px 22px 44px; align-items: flex-start; }
+    .afLogin__iso{ margin-bottom: 20px; }
+    .afLogin__pie{ margin-top: 26px; }
 }

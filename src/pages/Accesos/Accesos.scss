@@ -1,0 +1,231 @@
+/* Accesos del panel. Una lista, no una tabla de base de datos: son cinco o
+   seis personas y lo que importa de cada una es quién es y qué ve. */
+.acBarra{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+
+    &__txt{ margin: 0; font-size: 13.5px; color: #5C6B63; }
+}
+
+.acBtn{
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: #101F18;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+    cursor: pointer;
+
+    &:disabled{ opacity: .6; cursor: default; }
+}
+
+.acError, .acAviso{
+    margin: 0 0 14px;
+    padding: 11px 15px;
+    border-radius: 12px;
+    font-size: 13.5px;
+}
+.acError{ background: #FDECEA; color: #9B2C20; }
+.acAviso{ background: #E8F6EE; color: #17603C; }
+
+.acForma{
+    padding: 16px;
+    border: 1px solid #E4EBE7;
+    border-radius: 16px;
+    background: #FFFFFF;
+    margin: 0 0 18px;
+
+    &__campos{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+    }
+
+    input, select{
+        padding: 10px 13px;
+        border: 1px solid #E4EBE7;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 13.5px;
+        color: #101F18;
+
+        &:focus{ outline: none; border-color: #177A4C; }
+    }
+
+    &__nota{
+        margin: 12px 0;
+        font-size: 12.5px;
+        color: #5C6B63;
+    }
+}
+
+.acTabla{
+    border: 1px solid #E4EBE7;
+    border-radius: 16px;
+    background: #FFFFFF;
+    overflow: hidden;
+}
+
+.acVacio{ margin: 0; padding: 20px; font-size: 13.5px; color: #5C6B63; }
+
+.acFila{
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 190px 150px 130px;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid #F0F4F2;
+
+    &:last-child{ border-bottom: 0; }
+    &--off{ opacity: .55; }
+
+    &__quien{
+        min-width: 0;
+        b{ display: block; font-size: 14px; color: #101F18; }
+        small{ display: block; margin-top: 2px; font-size: 12.5px; color: #5C6B63; }
+    }
+
+    @media (max-width: 800px){
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+.acYo{
+    display: inline-block;
+    margin-left: 7px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #E8F6EE;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #17603C;
+    vertical-align: middle;
+}
+
+.acRol{
+    padding: 8px 11px;
+    border: 1px solid #E4EBE7;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #101F18;
+    background: #FFFFFF;
+
+    &:disabled{ background: #F5F8F6; color: #8A968F; }
+}
+
+.acDesde{ font-size: 12.5px; color: #8A968F; }
+
+.acEstado{
+    padding: 7px 14px;
+    border: 1px solid #E4EBE7;
+    border-radius: 999px;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #9B2C20;
+    cursor: pointer;
+
+    &--on{ border-color: #BFE8D3; background: #E8F6EE; color: #17603C; }
+    &:disabled{ opacity: .6; cursor: default; }
+}
+
+.acTitulo{
+    margin: 26px 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #101F18;
+}
+
+.acPermisos{
+    border: 1px solid #E4EBE7;
+    border-radius: 16px;
+    background: #FFFFFF;
+    overflow: hidden;
+
+    &__cab, &__fila{
+        display: grid;
+        grid-template-columns: minmax(0,1fr) 90px 120px 110px;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 16px;
+    }
+
+    &__cab{
+        background: #F5F8F6;
+        font-size: 12px;
+        font-weight: 700;
+        color: #5C6B63;
+        b{ text-align: center; }
+    }
+
+    &__fila{
+        border-top: 1px solid #F0F4F2;
+        font-size: 13.5px;
+        color: #101F18;
+
+        b{ text-align: center; font-size: 15px; }
+        .si{ color: #17603C; }
+        .no{ color: #C9D3CD; }
+    }
+}
+
+.acAcciones{ display: flex; gap: 7px; justify-content: flex-end; flex-wrap: wrap; }
+
+.acEditar{
+    padding: 7px 14px;
+    border: 1px solid #E4EBE7;
+    border-radius: 999px;
+    background: #FFFFFF;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #5C6B63;
+    cursor: pointer;
+
+    &:hover{ border-color: #177A4C; color: #101F18; }
+}
+
+/* Editar una cuenta: los datos de la persona y, si es motorizado, sus
+   distritos y su cupo. Antes vivían en dos pantallas distintas. */
+.acEdicion{
+    margin: 18px 0 0;
+    padding: 16px;
+    border: 1px solid #BFE8D3;
+    border-radius: 16px;
+    background: #F7FBF9;
+
+    h3{ margin: 0 0 12px; font-size: 15px; color: #101F18; }
+
+    &__campos{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+    }
+
+    input{
+        padding: 10px 13px;
+        border: 1px solid #E4EBE7;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 13.5px;
+        color: #101F18;
+        background: #FFFFFF;
+
+        &:focus{ outline: none; border-color: #177A4C; }
+    }
+
+    &__ancho{ grid-column: 1 / -1; }
+
+    &__nota{ margin: 14px 0 8px; font-size: 12.5px; color: #5C6B63; }
+
+    &__pie{ display: flex; gap: 8px; margin-top: 14px; }
+}

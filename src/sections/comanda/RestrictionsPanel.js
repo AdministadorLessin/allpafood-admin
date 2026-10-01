@@ -9,13 +9,13 @@ import Typography from '@mui/material/Typography';
 
 const ACCENT = '#F0C9A0';
 
-export default function RestrictionsPanel({ list, abreviarNombre }) {
+export default function RestrictionsPanel({ list, abreviarNombre, ancho = 1 }) {
   const items = (list || []).filter((item) => item.restriction !== 'ninguna');
 
   return (
     <Box
       sx={{
-        flex: 1,
+        flex: ancho,
         minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -57,35 +57,52 @@ export default function RestrictionsPanel({ list, abreviarNombre }) {
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 2.5, py: 2 }}>
         {items.length === 0 ? (
           <Typography sx={{ fontSize: 17, color: 'rgba(252,252,250,.45)', py: 2 }}>
             Ninguna restricción hoy
           </Typography>
         ) : (
-          <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none' }}>
+          /* En columnas, no en una lista larga.
+             En un monitor de 32" la lista de una sola columna obligaba a
+             bajar, y en cocina nadie scrollea: lo que no se ve, no existe.
+             Se reparte en columnas segun el ancho disponible y cada persona
+             queda entera en la suya. */
+          <Box
+            component="ul"
+            sx={{
+              m: 0, p: 0, listStyle: 'none',
+              columnCount: { xs: 1, xl: 2 },
+              columnGap: 3,
+              columnRule: '1px solid rgba(240,201,160,.14)',
+            }}
+          >
             {items.map((item) => (
               <Box
                 component="li"
                 key={item.id}
                 sx={{
-                  py: 1.75,
+                  breakInside: 'avoid',
+                  pb: 1.5,
+                  mb: 1.5,
                   borderBottom: '1px solid rgba(240,201,160,.14)',
-                  '&:last-child': { borderBottom: 0 },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 1 }}>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: '#FCFCFA' }}>
+                {/* El nombre y la restriccion en la misma linea: es un par que
+                    se lee junto, y partirlo en dos gastaba media pantalla. */}
+                <Box sx={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 0.75 }}>
+                  <Typography sx={{ fontSize: 18, fontWeight: 700, color: '#FCFCFA', lineHeight: 1.2 }}>
                     {abreviarNombre(item.fullName)}
                   </Typography>
                   <Typography
                     component="span"
                     sx={{
-                      px: 1.25,
-                      py: 0.25,
+                      px: 1,
+                      py: 0.15,
                       borderRadius: 999,
-                      fontSize: 15,
+                      fontSize: 13.5,
                       fontWeight: 700,
+                      lineHeight: 1.35,
                       color: '#2A2318',
                       bgcolor: ACCENT,
                     }}
@@ -95,7 +112,7 @@ export default function RestrictionsPanel({ list, abreviarNombre }) {
                 </Box>
 
                 {item.menus && item.menus.length > 0 && (
-                  <Typography sx={{ mt: 0.75, fontSize: 17, color: 'rgba(252,252,250,.7)', lineHeight: 1.4 }}>
+                  <Typography sx={{ mt: 0.4, fontSize: 14.5, color: 'rgba(252,252,250,.62)', lineHeight: 1.35 }}>
                     {item.menus.map((menu) => menu.name).join(' · ')}
                   </Typography>
                 )}

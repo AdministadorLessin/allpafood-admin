@@ -16,6 +16,7 @@ import { useAuthContext } from './../../context/authContext';
 
 import Modal from '@mui/material/Modal';
 import axios from 'axios';
+import moment from 'moment';
 
 import { TextField, InputAdornment } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -26,6 +27,8 @@ import ModalRightCont from './../../components/ModalRightCont/ModalRightCont';
 import UsuarioFormEditar from '../../components/Usuarios/Forms/EditarUsuario/EditarUsuario';
 import UsuarioFormActualizarPlan from "../../components/Usuarios/Forms/ActualizarPlan/ActualizarPlan";
 import UsuarioFormCambiarPlan from "../../components/Usuarios/Forms/CambiarPlan/CambiarPlan";
+import UsuarioFormRenovarPlan from "../../components/Usuarios/Forms/RenovarPlan/RenovarPlan";
+import UsuarioFicha from "../../components/Usuarios/Forms/Ficha/Ficha";
 
 
 import Box from '@mui/material/Box';
@@ -94,17 +97,38 @@ const PageUsuarios = (props) => {
     );
   });
 
-  const getUsuarios = () =>{
-    start();
-    axios.get(baseUrl+'admin/user-plan?page=1&size=100',
+  /* El servidor devuelve como maximo 100 por peticion, y esta pantalla pedia
+     una sola pagina: con 229 clientes en la base, 129 no aparecian por ningun
+     lado. Ahora se piden todas las paginas hasta completar el total que el
+     propio servidor informa. */
+  const TAM_PAGINA = 100;
+
+  const traerPagina = (pagina) =>
+    axios.get(`${baseUrl}admin/user-plan?page=${pagina}&size=${TAM_PAGINA}`,
       {headers: {"Authorization" : `Bearer ${token}`} }
-    ).then((resp)=>{
-      //console.log('getUsuarios',resp.data.data.content)
-      
+    ).then((r) => r?.data?.data || {});
+
+  const getUsuarios = async () =>{
+    start();
+    try{
+      const primera = await traerPagina(1);
+      let filas = primera.content || [];
+      const total = primera.totalElements || filas.length;
+
+      /* Las paginas que falten, en paralelo: son pocas y asi la lista no tarda
+         mas por cada centenar de clientes. */
+      const paginas = Math.ceil(total / TAM_PAGINA);
+      if (paginas > 1) {
+        const restantes = await Promise.all(
+          Array.from({length: paginas - 1}, (_, i) => traerPagina(i + 2))
+        );
+        restantes.forEach((p) => { filas = filas.concat(p.content || []); });
+      }
+
       const usersTmp = [];
-      if(resp?.data?.data?.content){
-        
-        resp?.data?.data?.content.map((item)=>{
+      if(filas.length){
+
+        filas.map((item)=>{
           usersTmp.push({
             id: item.userId,
             name: item.user?.profile?.name, 
@@ -123,18 +147,30 @@ const PageUsuarios = (props) => {
             consumedCount: item.consumedBenefits?.orders?.consumed,
             consumedTotal: item.consumedBenefits?.orders?.total,
             consumed: item.consumedBenefits?.orders?.consumed + ' / ' + item.consumedBenefits?.orders?.total,
-            state: item.user.status === 1 ? 'Activo' : 'Inactivo',
-            dni: item.user.documentNumber
+            /* Con el motivo al lado: en la lista de bajas lo primero que se
+               pregunta es por que se fue, no cuando. */
+            state: item.user.status === 1
+              ? 'Activo'
+              : (item.user.bajaMotivo ? `De baja · ${item.user.bajaMotivo}` : 'De baja'),
+            /* El numero, no la etiqueta: es lo que usa el segmento "De baja"
+               para apartarlos del resto. */
+            statusNum: item.user.status,
+            bajaAt: item.user.bajaAt || null,
+            bajaMotivo: item.user.bajaMotivo || null,
+            dni: item.user.documentNumber,
+            /* Alergias, azucar y doble proteina viven aqui dentro. Ya venian
+               en la respuesta y se descartaban: la ficha los necesita. */
+            information: item.user?.profile?.information || null
           })
         })
       }
       setUsers(usersTmp)
       done();
 
-    }).catch((err)=>{
+    }catch(err){
       console.log(err)
       fail();
-    })
+    }
   }
 
   // Modal
@@ -153,6 +189,18 @@ const PageUsuarios = (props) => {
   const [errorBorrar, setErrorBorrar] = useState('');
 
   const handleOpen = (data,formNumb) => {
+    if (formNumb === 'baja') {
+      setPorDarDeBaja(data);
+      setMotivoBaja('');
+      setErrorBaja('');
+      return;
+    }
+
+    if (formNumb === 'reactivar') {
+      reactivarCliente(data);
+      return;
+    }
+
     if (formNumb === 'eliminar') {
       setErrorBorrar('');
       setPorEliminar(data);
@@ -164,6 +212,40 @@ const PageUsuarios = (props) => {
       form:formNumb,
       data:data? data: null
     });
+  };
+
+  /* Dar de baja: lo que se usa cuando un cliente se va. A diferencia de
+     eliminar, conserva su historial y se puede deshacer. */
+  const [porDarDeBaja, setPorDarDeBaja] = useState(null);
+  const [motivoBaja, setMotivoBaja] = useState('');
+  const [errorBaja, setErrorBaja] = useState('');
+  const [dandoBaja, setDandoBaja] = useState(false);
+
+  const darDeBaja = () => {
+    if (!porDarDeBaja) return;
+    setDandoBaja(true);
+    setErrorBaja('');
+    axios
+      .post(`${baseUrl}admin/users/${porDarDeBaja.id}/baja`, { motivo: motivoBaja },
+        { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        const msg = r?.data?.data?.message || r?.data?.message;
+        setPorDarDeBaja(null);
+        getUsuarios();
+        if (msg) window.setTimeout(() => window.alert(msg), 60);
+      })
+      .catch((e) => setErrorBaja(
+        e?.response?.data?.data?.message || e?.response?.data?.message ||
+        'No pudimos dar de baja al cliente.'))
+      .finally(() => setDandoBaja(false));
+  };
+
+  const reactivarCliente = (fila) => {
+    axios
+      .post(`${baseUrl}admin/users/${fila.id}/alta`, {},
+        { headers: { Authorization: `Bearer ${token}` } })
+      .then(() => getUsuarios())
+      .catch(() => window.alert('No pudimos reactivar al cliente.'));
   };
 
   const eliminarUsuario = () => {
@@ -217,6 +299,47 @@ const PageUsuarios = (props) => {
     getPlanes();
   },[])
 
+  /**
+   * Los contactos del segmento que se esta viendo, para la difusion.
+   *
+   * Cada difusion empezaba con un pedido a mano —"dame el csv de los
+   * vencidos"— y alguien corriendo una consulta contra la base. Es una tarea
+   * semanal y los datos ya estan en esta pantalla: sale de lo que se ve, con
+   * el mismo filtro de segmento y de busqueda aplicados.
+   */
+  const descargarContactos = () => {
+    if (!filteredUsers.length) return;
+
+    const etiqueta = (SEGMENTS.find((x) => x.value === segment)?.label || 'usuarios')
+      .toLowerCase().replace(/\s+/g, '-');
+
+    /* El celular va tal cual esta guardado: es lo que se pega en la lista de
+       difusion de WhatsApp, y "arreglarlo" aqui solo genera dos formas del
+       mismo numero. */
+    const filas = [
+      ['Nombre', 'Apellido', 'Celular', 'Plan', 'Vence', 'Envíos restantes', 'Estado'],
+      ...filteredUsers.map((u) => [
+        u.name || '', u.lastName || '', u.phone || '', u.plan || '',
+        u.expira ? moment(u.expira).format('DD/MM/YYYY') : '',
+        (Number.isFinite(Number(u.consumedTotal)) && Number.isFinite(Number(u.consumedCount)))
+          ? Math.max(Number(u.consumedTotal) - Number(u.consumedCount), 0) : '',
+        u.state || '',
+      ]),
+    ];
+
+    const celda = (v) => {
+      const t = v === null || v === undefined ? '' : String(v);
+      return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
+    const csv = filas.map((f) => f.map(celda).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `contactos-${etiqueta}-${moment().format('YYYY-MM-DD')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <LayoutPages>
       <TitlePage title={'Usuarios:'} />
@@ -251,6 +374,17 @@ const PageUsuarios = (props) => {
             );
           })}
         </Stack>
+
+        <Button
+          variant="outlined"
+          size="small"
+          disabled={!filteredUsers.length}
+          onClick={descargarContactos}
+          sx={{ whiteSpace: 'nowrap' }}
+          title="Nombres y celulares de los que estás viendo, para la difusión de WhatsApp"
+        >
+          Descargar contactos ({filteredUsers.length})
+        </Button>
 
         <Box sx={{ width: { xs: '100%', md: 320 } }}>
         <div className="inlineFlex textFieldAdmin textFieldAdmin2 textFieldAdminUser">
@@ -317,10 +451,13 @@ const PageUsuarios = (props) => {
             },
           }}
           pageSizeOptions={[10, 25, 50]}
-          sx={{ border: 0, width: '100%', minHeight: 520 }}
+          sx={{ border: 0, width: '100%', minHeight: 520, '& .MuiDataGrid-row': { cursor: 'pointer' } }}
           localeText={esES.components.MuiDataGrid.defaultProps.localeText}
           rowHeight={68}
           columnHeaderHeight={48}
+          /* Tocar la fila abre su ficha. El menu de acciones ya frena la
+             propagacion, asi que elegir "Renovar" no abre las dos cosas. */
+          onRowClick={(params) => handleOpen(params.row, 'ficha')}
           disableRowSelectionOnClick
           columnVisibilityModel={{ id: false }}
         />
@@ -346,10 +483,23 @@ const PageUsuarios = (props) => {
         aria-describedby="modal-modal-description"
       >
         <ModalRightCont
-          title={'Editar usuario'}
+          title={
+            tmpData.form === 'ficha' ? 'Ficha del cliente'
+            : tmpData.form === 'renovar' ? 'Renovar plan'
+            : tmpData.form === 2 ? 'Actualizar plan'
+            : tmpData.form === 3 ? 'Cambiar plan'
+            : tmpData.form === 4 ? 'Crear usuario'
+            : 'Editar usuario'
+          }
         >
           
-          {tmpData.form === 1 ?
+          {tmpData.form === 'ficha' ?
+            <UsuarioFicha
+              data = { tmpData.data }
+              getUsuarios = { getUsuarios }
+              onAccion = { (form) => setTmpData((t) => ({ ...t, form })) }
+            />
+          : tmpData.form === 1 ?
         
             <UsuarioFormEditar 
               data = { tmpData.data }
@@ -361,6 +511,13 @@ const PageUsuarios = (props) => {
               data = { tmpData.data }
               handleClose = { handleClose }
               getUsuarios = { getUsuarios }
+            />
+          : tmpData.form === 'renovar' ?
+            <UsuarioFormRenovarPlan
+              data = { tmpData.data }
+              handleClose = { handleClose }
+              getUsuarios = { getUsuarios }
+              planList = { planList }
             />
           : tmpData.form === 3 ?
             <UsuarioFormCambiarPlan
@@ -382,6 +539,37 @@ const PageUsuarios = (props) => {
       {/* Confirmacion de borrado. No es un modal mas del panel derecho: es la
           unica accion irreversible de la pantalla y tiene que verse como tal,
           con el nombre de quien se va a borrar escrito delante. */}
+      <Dialog
+        open={Boolean(porDarDeBaja)}
+        onClose={() => !dandoBaja && setPorDarDeBaja(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>Dar de baja</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            <b>{[porDarDeBaja?.name, porDarDeBaja?.lastName].filter(Boolean).join(' ') || 'Este cliente'}</b>{' '}
+            deja de recibir comida y se le cancelan los pedidos que le quedaban
+            programados. Su historial se conserva y lo puedes reactivar cuando quieras.
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            label="Motivo (opcional)"
+            placeholder="Se mudó, ya no quiere, se quejó…"
+            value={motivoBaja}
+            onChange={(e) => setMotivoBaja(e.target.value)}
+          />
+          {errorBaja && <Alert severity="error" sx={{ mt: 2 }}>{errorBaja}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPorDarDeBaja(null)} disabled={dandoBaja}>Cancelar</Button>
+          <Button onClick={darDeBaja} color="warning" variant="contained" disabled={dandoBaja}>
+            {dandoBaja ? 'Dando de baja…' : 'Dar de baja'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={Boolean(porEliminar)}
         onClose={() => !borrando && setPorEliminar(null)}

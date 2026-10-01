@@ -20,6 +20,7 @@ import axios from 'axios';
 import { useAuthContext } from "../../../../context/authContext";
 
 import FormLabel from '@mui/material/FormLabel';
+import SelectorVendedor from '../../../Vendedores/SelectorVendedor';
 
 const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
   const { token, baseUrl } = useAuthContext();
@@ -44,8 +45,13 @@ const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
       .max(9, "Máximo 9 dígitos"),
     phoneNumber: Yup.string()
       .required("El teléfono es obligatorio")
-      .min(9, "Mínimo 9 dígitos")
-      .max(14, "Máximo 14 dígitos"),
+      .test('celular', 'Escribe un celular peruano: 9 dígitos, o 11 con el 51 adelante.',
+        (v) => {
+          const d = (v || '').replace(/\D/g, '');
+          return (d.length === 9 && d.startsWith('9'))
+              || (d.length === 11 && d.startsWith('519'))
+              || (d.length === 13 && d.startsWith('5151'));
+        }),
     password: Yup.string()
       .required("La contraseña es obligatoria")
       .min(6, "La contraseña debe tener al menos 6 caracteres"),
@@ -62,11 +68,18 @@ const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
   });
 
   const [planSelect, setPlanSelect] = useState('ninguno');
+  const [vendedor, setVendedor] = useState(null);
+  const [errorVendedor, setErrorVendedor] = useState('');
   const handleChange = (event) => {
     setPlanSelect(event.target.value);
   };
 
   const onSubmitHandler = (dataForm) => {
+    if (planSelect !== 'ninguno' && !vendedor) {
+      setErrorVendedor('Elige quién hizo la venta.');
+      return;
+    }
+    setErrorVendedor('');
 
     setLoadForm(true);
     setErrorAxios(false);
@@ -75,7 +88,12 @@ const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
       name: dataForm.name,
       lastname: dataForm.lastname,
       email: dataForm.email,
-      phoneNumber: '51'+dataForm.phoneNumber,
+      /* Sin anteponer el 51 a ciegas: quien pega el celular tal como lo tiene
+         guardado ya lo trae, y quedaba 5151951325625 —un numero que no existe
+         y con el que el cliente no puede entrar, porque se entra con el
+         celular—. El servidor normaliza igual; esto evita que el panel llegue
+         a mandar algo raro. */
+      phoneNumber: dataForm.phoneNumber.replace(/\D/g, '').replace(/^51(?=51\d{9}$)/, ''),
       documentNumber: dataForm.documentNumber,
       password: dataForm.password,
     };
@@ -99,7 +117,8 @@ const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
                   userId: resp.data.data.userId,
                   planId: parseInt(planSelect),
                   paymentMethodType: "yape",
-                  paymentMethodId: "yape"
+                  paymentMethodId: "yape",
+                  sellerId: vendedor
                 }
               ,{
                   headers: {"Authorization" : `Bearer ${token}`}
@@ -256,6 +275,14 @@ const UsuarioFormCrear = ({ handleClose, getUsuarios, planList }) => {
               </FormControl>
             </div>
           </Grid>
+
+          {planSelect !== 'ninguno' && (
+            <Grid size={{ xs: 12 }}>
+              <div className="inlineFlex textFieldAdmin textFieldAdmin2">
+                <SelectorVendedor value={vendedor} onChange={(v) => { setVendedor(v); setErrorVendedor(''); }} error={errorVendedor} />
+              </div>
+            </Grid>
+          )}
 
           {/* Mensaje de Error */}
           {errorAxios && (

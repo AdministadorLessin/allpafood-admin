@@ -16,10 +16,17 @@ import PageMotorizados from './pages/Motorizados/Motorizados';
 import PageMotorizadoIrvin from './pages/Motorizado/MotorizadoIrvin';
 import PageUsuarios from './pages/Usuarios/Usuarios';
 import PagePlanes from './pages/Planes/Planes';
+import PageVentas from './pages/Ventas/Ventas';
 import NotFoundPage from './pages/NotFound/NotFound';
+import CoberturaPage from './pages/Cobertura/Cobertura';
+import PantallaError from './components/util/PantallaError';
+import AccesosPage from './pages/Accesos/Accesos';
+import EmpresasPage from './pages/Empresas/Empresas';
+import TarjetasPage from './pages/Tarjetas/Tarjetas';
 
 function App() {
   return (
+    <PantallaError>
     <AuthContextProvider>
         <BrowserRouter>
           <Routes>
@@ -28,6 +35,7 @@ function App() {
               <Route path="/usuarios" element={ <PageUsuarios /> } />
 
               <Route path="/planes" element={ <PagePlanes /> } />
+              <Route path="/ventas" element={ <PageVentas /> } />
 
               <Route path="/menu" element={ <PageMenus /> } />
               <Route path="/programar" element={ <PageProgram /> } />
@@ -35,6 +43,10 @@ function App() {
               
               <Route path="/motorizados" element={ <PageMotorizados /> } /> } />
               <Route path="/rutas" element={ <PageRutas /> } /> } />
+              <Route path="/cobertura" element={ <CoberturaPage /> } />
+              <Route path="/accesos" element={ <AccesosPage /> } />
+              <Route path="/empresas" element={ <EmpresasPage /> } />
+              <Route path="/tarjetas" element={ <TarjetasPage /> } />
               
             </Route>
             <Route path="/ingresar" element={ <LoginPage/> } />
@@ -47,6 +59,7 @@ function App() {
           </Routes>
         </BrowserRouter>
     </AuthContextProvider>
+    </PantallaError>
   );
 }
 

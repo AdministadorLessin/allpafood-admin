@@ -34,9 +34,9 @@ import ReportIcon from '@mui/icons-material/Report';
 import RoomIcon from '@mui/icons-material/Room';
 
 import MotorizadoDirectionsIrvin from "../../components/Motorizados/Directions/DirectionsIrvin";
+import { MAPS_KEY, MAPS_ID } from '../../config';
 
 
-const API_KEY = 'AIzaSyA2RQfrTKIQNzphsuq06Czy5u-BH2XBFsI';
 
 const PageMotorizadoIrvin = (props) => {
 
@@ -148,11 +148,11 @@ const PageMotorizadoIrvin = (props) => {
             
             <div className="inlineFlex motorizadoMap">
                 <APIProvider 
-                    apiKey={API_KEY}
+                    apiKey={MAPS_KEY}
                     libraries={['marker', 'routes', 'geometry']}
                 >
                     <Map
-                        mapId={'8f1d9e42cf8834cfb88cbcd3'}
+                        mapId={MAPS_ID}
                         defaultZoom={18}
                         className={'dmResumenMapStyle'}
                         defaultCenter={{lat: -12.164924, lng: -76.955978}}

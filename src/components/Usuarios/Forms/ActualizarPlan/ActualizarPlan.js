@@ -66,12 +66,15 @@ const UsuarioFormActualizarPlan = ({data,handleClose,getUsuarios}) => {
     
         setLoadForm(true)
 
+        /* El total sale de lo que el cliente tiene AHORA, no de un 20 escrito
+           a mano: quien renovo con envios pendientes tiene 40, y forzar 20
+           aqui le borraba la mitad de lo que pago. */
         const userUpdate = {
             planExpirationDate: dataForm.pexpiracion,
             consumedBenefits: {
                 orders: {
-                    "total": 20,
-                    "consumed": dataForm.penvios
+                    "total": Number(vivo?.total ?? data.consumedTotal ?? 20),
+                    "consumed": Number(dataForm.penvios)
                 }
             }
         }
@@ -109,12 +112,32 @@ const UsuarioFormActualizarPlan = ({data,handleClose,getUsuarios}) => {
         });
     };
 
+    /* El consumo se relee del servidor al abrir, no se toma de la lista.
+       La lista puede llevar minutos cargada, y en ese rato el cliente pudo
+       pedir o el automatico pudo armarle la semana: guardar sin tocar nada
+       reescribia el consumo con un numero viejo y le regalaba envios que ya
+       habia gastado, sin que nadie lo notara. */
+    const [vivo, setVivo] = useState(null);
+
     useEffect(()=>{
-        //console.log(data)
         setBodyFields({
             penvios: data.consumedHide,
             pexpiracion: data.expira,
         });
+
+        axios.get(baseUrl+'admin/user-plan/'+data.id, { headers: {"Authorization" : `Bearer ${token}`} })
+            .then((resp)=>{
+                const plan = resp?.data?.data;
+                const ordenes = plan?.consumedBenefits?.orders;
+                if (!ordenes) return;
+                setVivo(ordenes);
+                setBodyFields((b)=>({
+                    ...b,
+                    penvios: ordenes.consumed,
+                    pexpiracion: plan.planExpirationDate || b.pexpiracion,
+                }));
+            })
+            .catch((error)=>{ console.log('plan', error); });
     },[]);
 
     return (
@@ -122,6 +145,13 @@ const UsuarioFormActualizarPlan = ({data,handleClose,getUsuarios}) => {
             <div className="inlineBlock">
                 <form onSubmit={handleSubmit(onSubmitHandler)}>
                     <Grid container spacing={2}>
+                        {vivo &&
+                            <Grid size={{ xs: 12, sm: 12, md: 12 }}>
+                                <Alert severity="info">
+                                    Ahora mismo lleva <b>{vivo.consumed} de {vivo.total}</b> envíos.
+                                </Alert>
+                            </Grid>
+                        }
                         <Grid size={{ xs: 12, sm: 12, md: 12 }}>
                             <div className="inlineFlex textFieldAdmin textFieldAdmin2">
                                 <TextField 

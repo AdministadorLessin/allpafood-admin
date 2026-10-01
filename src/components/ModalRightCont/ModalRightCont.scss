@@ -7,4 +7,12 @@
     background: white;
     right: 0px;
     padding: 30px;
+    /* La ficha del cliente es mas larga que la pantalla: sin esto no se
+       podia bajar a ver la semana ni las preferencias. */
+    box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    outline: none;
+    @media (max-width: 600px){ width: 100%; padding: 20px 16px; }
 }

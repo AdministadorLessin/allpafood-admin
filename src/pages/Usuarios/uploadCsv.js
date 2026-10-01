@@ -33,10 +33,10 @@ const VisuallyHiddenInput = styled("input")({
    entiende los dos formatos. */
 const PLANTILLA = [
   "sep=,",
-  "nombre,apellido,correo,telefono,documento,contrasena,plan,envios_consumidos,fecha_inicio",
-  "Ana,Torres,ana.torres@gmail.com,987654321,45678912,12345678,Nutrivital,2,08/09/2026",
-  "Luis,Rojas,,912345678,70123456,12345678,Fitfuel,0,",
-  "Carla,Diaz,,998877665,41236587,12345678,,,",
+  "nombre,apellido,correo,telefono,documento,contrasena,plan,envios_consumidos,fecha_inicio,direccion,referencia,distrito,motorizado",
+  "Ana,Torres,ana.torres@gmail.com,987654321,45678912,12345678,Nutrivital,2,08/09/2026,Av. Primavera 120 Dpto 402,Edificio gris al lado del grifo,Santiago de Surco,941152020",
+  "Luis,Rojas,,912345678,70123456,12345678,Fitfuel,0,,Calle Los Pinos 340,Casa con reja verde,Miraflores,",
+  "Carla,Diaz,,998877665,41236587,12345678,,,,,,,",
 ].join("\r\n");
 
 const descargarPlantilla = () => {
@@ -146,7 +146,7 @@ export default function UploadUsersCsv({ onUploaded }) {
                     startIcon={<FileDownloadOutlinedIcon />}
                     onClick={descargarPlantilla}
                     disabled={uploading}
-                    title="El correo es opcional: el cliente entra con su celular"
+                    title="El correo es opcional: el cliente entra con su celular. La dirección, la referencia, el distrito y el celular del motorizado también son opcionales: si los pones, el cliente queda con su ruta lista y no tiene que llenar nada al entrar."
                 >
                     Plantilla
                 </Button>

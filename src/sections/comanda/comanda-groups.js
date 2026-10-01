@@ -55,3 +55,43 @@ export function totalUnits(list) {
   if (!Array.isArray(list)) return 0;
   return list.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
 }
+
+/**
+ * Junta el mismo plato aunque venga como almuerzo y como cena.
+ *
+ * Cada dia ofrece las MISMAS tres opciones para almuerzo y para cena, y en la
+ * base cada una es una fila distinta de tbl_menu_type apuntando al mismo plato.
+ * La comanda las mostraba separadas, asi que la cocina leia "51" y "8" del
+ * guiso de pallares y tenia que sumarlos de cabeza para saber cuanto cocinar.
+ * Lo que se cocina es una olla, no dos.
+ *
+ * Se respeta el orden en que llegan: es el orden en que estan cargadas en el
+ * menu del dia, que es de donde sale el numero de opcion del flyer.
+ */
+export function mergeByDish(list) {
+  if (!Array.isArray(list) || list.length === 0) return [];
+
+  const platos = new Map();
+
+  list.forEach((item) => {
+    /* Por id del plato, no por nombre: dos platos podrian llamarse igual y
+       nada garantiza que el texto venga identico. */
+    const clave = item?.menuId ?? item?.menuName;
+    const previo = platos.get(clave);
+
+    if (previo) {
+      previo.count += Number(item.count) || 0;
+      return;
+    }
+
+    platos.set(clave, {
+      ...item,
+      count: Number(item.count) || 0,
+      /* El tipo deja de identificar la linea: una linea es un plato. Se
+         conserva uno solo para que la clave de React siga siendo estable. */
+      menuType: 'plato',
+    });
+  });
+
+  return Array.from(platos.values());
+}

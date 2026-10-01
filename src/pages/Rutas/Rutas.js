@@ -5,6 +5,7 @@ import moment from 'moment';
 import 'moment/locale/es';
 import LayoutPages from '../../components/LayoutPages/LayoutPages';
 import TitlePage from '../../components/Pages/Title/Title';
+import AvanceMotorizados from '../../sections/entregas/AvanceMotorizados';
 import { useAuthContext } from '../../context/authContext';
 import * as XLSX from 'xlsx';
 
@@ -22,9 +23,10 @@ moment.locale('es');
  *
  * Por eso recibe todo por props en vez de tomarlo del entorno.
  */
-const Punto = ({ p, motorizadoId, indice, apagado, moviendo, onInicio, onFin, onSoltar }) => (
+const Punto = ({ p, motorizadoId, indice, apagado, moviendo, onInicio, onFin, onSoltar,
+                rutas, onMover, enlaceMapa }) => (
   <div
-    className={`ruPunto ${apagado ? 'ruPunto--apagado' : ''} ${moviendo ? 'ruPunto--moviendo' : ''}`}
+    className={`ruPunto ${p.direccionNueva ? 'ruPunto--nuevo' : ''} ${apagado ? 'ruPunto--apagado' : ''} ${moviendo ? 'ruPunto--moviendo' : ''}`}
     draggable
     onDragStart={() => onInicio(p.orderId, motorizadoId)}
     onDragEnd={onFin}
@@ -33,11 +35,64 @@ const Punto = ({ p, motorizadoId, indice, apagado, moviendo, onInicio, onFin, on
     title={p.telefono || ''}
   >
     <span className="ruPunto__pos">{p.posicion ?? '·'}</span>
-    <span className="ruPunto__nom">{p.cliente}</span>
-    <span className="ruPunto__dir">
+    <span className="ruPunto__nom">
+      {/* Los colaboradores de una empresa comparten direccion: sin la marca se
+          leen como diez clientes sueltos que casualmente viven juntos. */}
+      {p.empresa &&
+        <b className="ruPunto__emp" style={{ '--emp': p.empresaColor || '#3CFB9F' }}>{p.empresa}</b>}
+      {p.cliente}
+      {/* Solo cuando pidio de mas. Un cliente de almuerzo y cena lleva dos
+          tapers todos los dias: marcarlo tambien a el convertiria el aviso en
+          ruido y dejaria de verse el que si importa. */}
+      {p.porciones > p.porcionesBase && <b className="ruPunto__x">{p.porciones} platos</b>}
+    </span>
+    {/* La direccion abre el punto en Maps. Antes habia que copiarla y
+        buscarla a mano cada vez que algo no cuadraba. */}
+    <a
+      className="ruPunto__dir ruPunto__dir--mapa"
+      href={enlaceMapa(p)}
+      target="_blank"
+      rel="noreferrer"
+      draggable={false}
+      onClick={(e) => e.stopPropagation()}
+      title={p.lat ? 'Abrir el punto exacto en Google Maps' : 'Buscar la dirección en Google Maps'}
+    >
       {p.direccion || 'sin direccion'}
       {p.distrito ? ` · ${p.distrito}` : ''}
-    </span>
+    </a>
+
+    {/* Cambiar de moto con un clic. Arrastrar entre ocho columnas obligaba a
+        sostener el clic mientras la pantalla se desplazaba sola hacia una
+        columna que no se ve; con ocho rutas simplemente no alcanza. El
+        arrastre se queda para reordenar dentro de la ruta, que es corto y
+        natural. */}
+    {rutas && rutas.length > 1 && (
+      <select
+        className="ruPunto__mover"
+        value=""
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => { if (e.target.value) onMover(p.orderId, e.target.value); }}
+        title="Pasar este cliente a otra ruta"
+      >
+        <option value="">Mover a…</option>
+        {rutas
+          .filter((r) => r.motorizadoId !== motorizadoId)
+          .map((r, i) => (
+            <option key={r.motorizadoId} value={r.motorizadoId}>
+              {`${r.numero}. ${r.nombre} (${r.puntos.length}/${r.capacidad})`}
+            </option>
+          ))}
+      </select>
+    )}
+    {/* Lo unico que hay que revisar: direccion usada por primera vez (cliente
+        nuevo o que se mudo) y quien lo llevaba antes si hoy lo lleva otro. */}
+    {(p.direccionNueva || p.antesCon) && (
+      <span className="ruPunto__nov">
+        {p.direccionNueva ? 'Dirección nueva' : ''}
+        {p.direccionNueva && p.antesCon ? ' · ' : ''}
+        {p.antesCon ? `antes con ${p.antesCon}` : ''}
+      </span>
+    )}
   </div>
 );
 
@@ -55,7 +110,14 @@ const Punto = ({ p, motorizadoId, indice, apagado, moviendo, onInicio, onFin, on
 const Rutas = () => {
   const { baseUrl, token } = useAuthContext();
 
-  const [fecha, setFecha] = useState(moment().add(1, 'day').format('YYYY-MM-DD'));
+  /* Abria SIEMPRE en manana. Nacio asi porque las rutas se armaban de noche,
+     pero el uso real es al reves: en la manana el coordinador despacha HOY y
+     abria el tablero para encontrarse con la jornada equivocada. A las 22:00
+     cierran los pedidos del dia siguiente; recien ahi tiene sentido mirar
+     manana. */
+  const [fecha, setFecha] = useState(
+    moment().add(moment().hour() >= 22 ? 1 : 0, 'day').format('YYYY-MM-DD')
+  );
   const [tablero, setTablero] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -67,6 +129,8 @@ const Rutas = () => {
   const [avisando, setAvisando] = useState(false);
   const [aviso, setAviso] = useState('');
   const [repartiendo, setRepartiendo] = useState(false);
+  const [preparando, setPreparando] = useState(false);
+  const [confirmarSemana, setConfirmarSemana] = useState(false);
 
   const cabecera = useMemo(
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
@@ -111,6 +175,72 @@ const Rutas = () => {
    * Sale en el orden del recorrido para que la pila de bolsas quede en el
    * orden en que se van a entregar.
    */
+  /** Una celda de CSV, con comillas solo si hacen falta. */
+  const celdaCsv = (v) => {
+    const t = v === null || v === undefined ? '' : String(v);
+    return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+
+  /** Baja un CSV con BOM, para que Excel no rompa las tildes ni la ene. */
+  const bajarCsv = (nombre, filas) => {
+    const csv = filas.map((f) => f.map(celdaCsv).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /* El punto exacto que marco el cliente. Con texto, Maps adivina y deja al
+     motorizado a media cuadra; con coordenadas abre en la puerta. */
+  const enlaceMapa = (p) =>
+    p.lat && p.lng
+      ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          [p.direccion, p.distrito, 'Lima Peru'].filter(Boolean).join(', '))}`;
+
+  const telefonoLindo = (t) => {
+    const d = (t || '').replace(/\D/g, '');
+    return d.length === 11 && d.startsWith('51') ? `+51 ${d.slice(2)}` : (t || '');
+  };
+
+  /**
+   * La hoja de reparto de una ruta: a quien, donde y a que numero.
+   *
+   * Es distinta del rotulado, que es para cocina y no lleva telefono. Esta la
+   * usa el motorizado, y lo que necesita en la calle es el celular del cliente
+   * y el enlace al punto exacto, no las restricciones alimentarias.
+   */
+  const descargarReparto = (ruta) => {
+    if (!ruta.puntos.length) { setError(`${ruta.nombre} no tiene puntos ese dia.`); return; }
+    const filas = [
+      ['#', 'Cliente', 'Telefono', 'Distrito', 'Direccion', 'Referencia', 'Mapa', 'Pedido'],
+      ...ruta.puntos.map((p, i) => [
+        i + 1, p.cliente, telefonoLindo(p.telefono), p.distrito || '',
+        p.direccion || '', p.referencia || '', enlaceMapa(p), p.orderId,
+      ]),
+    ];
+    bajarCsv(`reparto-${ruta.nombre.replace(/[^A-Za-z0-9]+/g, '-')}-${fecha}.csv`, filas);
+  };
+
+  /** Todas las rutas en un archivo, con la columna de ruta al inicio. */
+  const descargarRepartoGeneral = () => {
+    const filas = [['Ruta', 'Motorizado', '#', 'Cliente', 'Telefono', 'Distrito', 'Direccion', 'Referencia', 'Mapa', 'Pedido']];
+    (tablero?.rutas || []).forEach((r, iR) => {
+      r.puntos.forEach((p, i) => filas.push([
+        iR + 1, r.nombre, i + 1, p.cliente, telefonoLindo(p.telefono), p.distrito || '',
+        p.direccion || '', p.referencia || '', enlaceMapa(p), p.orderId,
+      ]));
+    });
+    (tablero?.sinAsignar || []).forEach((p) => filas.push([
+      '', 'SIN ASIGNAR', '', p.cliente, telefonoLindo(p.telefono), p.distrito || '',
+      p.direccion || '', p.referencia || '', enlaceMapa(p), p.orderId,
+    ]));
+    if (filas.length === 1) { setError('No hay puntos ese dia.'); return; }
+    bajarCsv(`reparto-todas-${fecha}.csv`, filas);
+  };
+
   const descargarRotulado = (ruta) => {
     axios
       .get(
@@ -146,9 +276,15 @@ const Rutas = () => {
              Va pegado al nombre porque es lo que se compara contra el Excel
              de la operacion mientras dure la migracion. */
           Opción: o.option || '',
+          /* Cuantos tapers van en esa bolsa. Casi siempre 1; hay clientes que
+             piden dos o tres el mismo dia y la etiqueta tiene que decirlo. */
+          Porciones: o.portions > 1 ? o.portions : '',
           Motorizado: nombreCorto(o.motorizedName, o.motorizedLastname),
           Distrito: o.district ? `${o.district.substring(0, 5)}.` : '',
-          Azúcar: o.sugar === 'Sí' ? 'Sí' : '',
+          /* La etiqueta solo avisa la excepcion: quien pidio SIN azucar.
+             Marcar a los que si aceptan llenaba la hoja de "Sí" y la cocina
+             tenia que buscar entre ellos al que no. */
+          'Sin azúcar': o.sugar === 'No' ? 'SIN AZÚCAR' : '',
           'Restricciones Alimentarias': o.alimentsRestrictions || '',
           'Doble Proteína': o.doubleProtein === 'Sí' ? 'Sí' : '',
           Snack: o.snack === 'Sí' ? 'Snack' : '',
@@ -189,6 +325,33 @@ const Rutas = () => {
   };
 
   /**
+   * Arma los pedidos que falten de los proximos cinco dias de reparto y les
+   * pone su motorizado.
+   *
+   * El tablero muestra pedidos, no clientes. Un cliente con su direccion y su
+   * motorizado ya guardados no aparece en ninguna ruta hasta que tiene pedido,
+   * y los pedidos solo nacen cuando el cliente elige o el domingo por la
+   * noche. Esto cubre ese hueco sin esperar al domingo: util despues de dar de
+   * alta clientes a mitad de semana.
+   *
+   * No pisa lo que el cliente ya eligio: solo crea los dias que le faltan.
+   */
+  const prepararSemana = () => {
+    setPreparando(true);
+    setError(null);
+    setAviso('');
+
+    axios
+      .post(`${baseUrl}delivery/motorized/prepare-week`, {}, cabecera)
+      .then((r) => {
+        setAviso(r.data?.data?.message || r.data?.message || 'Semana preparada.');
+        cargar();
+      })
+      .catch(() => setError('No pudimos preparar la semana.'))
+      .finally(() => setPreparando(false));
+  };
+
+  /**
    * Avisa a los clientes de una ruta que su pedido salio.
    *
    * Esto antes lo hacia la asignacion por su cuenta: arrastrar una tarjeta le
@@ -199,6 +362,54 @@ const Rutas = () => {
    * El servidor ignora a los que ya tenian aviso, asi que apretar dos veces no
    * molesta a nadie dos veces.
    */
+  /**
+   * El aviso de salida de todas las rutas, en un solo gesto.
+   *
+   * Mandarlo ruta por ruta son ocho confirmaciones a las 10 de la manana, con
+   * el despacho encima; el resultado real era que se saltaban rutas. Aqui se
+   * recorren todas y al final se dice cuantos clientes recibieron el mensaje y
+   * cuantos fallaron, que es lo que el coordinador necesita saber.
+   */
+  const avisarSalidaTodas = () => {
+    const conPuntos = (tablero?.rutas || []).filter((r) => r.puntos.length > 0);
+    if (!conPuntos.length) { setError('No hay rutas con puntos que avisar.'); return; }
+
+    setAvisando(true);
+    setError(null);
+    setAviso('');
+
+    Promise.all(conPuntos.map((r) =>
+      axios
+        .post(`${baseUrl}delivery/motorized/notify-route`, r.puntos.map((p) => p.orderId), cabecera)
+        .then((resp) => {
+          const d = resp.data?.data ?? resp.data ?? {};
+          return { nombre: r.nombre, avisados: d.avisados ?? 0, fallidos: d.fallidos ?? 0 };
+        })
+        .catch(() => ({ nombre: r.nombre, avisados: 0, fallidos: r.puntos.length, corto: true }))
+    )).then((res) => {
+      const avisados = res.reduce((a, r) => a + r.avisados, 0);
+      const fallidos = res.reduce((a, r) => a + r.fallidos, 0);
+      const rutasMal = res.filter((r) => r.fallidos > 0).map((r) => r.nombre);
+
+      if (avisados === 0 && fallidos > 0) {
+        setError(`No salio ningun aviso: WhatsApp rechazo los ${fallidos} envios. `
+          + 'Suele ser la plantilla, no los telefonos. Puedes volver a intentarlo.');
+      } else if (fallidos > 0) {
+        setAviso(`Aviso enviado a ${avisados} cliente${avisados === 1 ? '' : 's'}. `
+          + `Fallaron ${fallidos} en ${rutasMal.join(', ')}; puedes reintentar esa ruta.`);
+      } else if (avisados === 0) {
+        setAviso('Todas las rutas ya tenian su aviso. No se repitio ninguno.');
+      } else {
+        setAviso(`Aviso de salida enviado a ${avisados} cliente${avisados === 1 ? '' : 's'} `
+          + `de ${conPuntos.length} ruta${conPuntos.length === 1 ? '' : 's'}.`);
+      }
+    }).finally(() => {
+      setAvisando(false);
+      setPorAvisar(null);
+      cargar();
+    });
+  };
+
   const avisarSalida = (ruta) => {
     setAvisando(true);
     setError(null);
@@ -211,11 +422,30 @@ const Rutas = () => {
         cabecera
       )
       .then((r) => {
-        const avisados = r.data?.data?.avisados ?? r.data?.avisados ?? 0;
+        const d = r.data?.data ?? r.data ?? {};
+        const avisados = d.avisados ?? 0;
+        const fallidos = d.fallidos ?? 0;
+        const n = (x) => `${x} cliente${x === 1 ? '' : 's'}`;
+
+        /* "Cero avisados" tenia dos causas opuestas y el panel las contaba
+           igual: que ya lo tuvieran, o que WhatsApp rechazara todos los
+           envios. Con la plantilla mal configurada el coordinador leia "ya
+           tenian el aviso" mientras la ruta entera salia sin avisar a nadie. */
+        if (fallidos > 0 && avisados === 0) {
+          setError(
+            `No salió ningún aviso de ${ruta.nombre}: WhatsApp rechazó los ${fallidos} envíos. ` +
+            `Suele ser la plantilla, no los teléfonos. Puedes volver a intentarlo.`
+          );
+          return;
+        }
+        if (fallidos > 0) {
+          setAviso(`Aviso enviado a ${n(avisados)} de ${ruta.nombre}. Fallaron ${fallidos}, puedes reintentar.`);
+          return;
+        }
         setAviso(
           avisados === 0
-            ? `Los clientes de ${ruta.nombre} ya tenian el aviso. No se repitio ninguno.`
-            : `Aviso enviado a ${avisados} cliente${avisados === 1 ? '' : 's'} de ${ruta.nombre}.`
+            ? `Los clientes de ${ruta.nombre} ya tenían el aviso. No se repitió ninguno.`
+            : `Aviso enviado a ${n(avisados)} de ${ruta.nombre}.`
         );
       })
       .catch(() => setError(`No pudimos avisar a los clientes de ${ruta.nombre}.`))
@@ -259,6 +489,7 @@ const Rutas = () => {
             Fecha: moment(fecha).format('DD/MM/YYYY'),
             Cliente: nombre(o.clientName, o.clientLastname),
             Opción: o.option || '',
+            Porciones: o.portions > 1 ? o.portions : '',
             Almuerzo: o.lunchName || '',
             Cena: o.dinnerName || '',
             Bebida: o.drinkName || '',
@@ -274,6 +505,89 @@ const Rutas = () => {
         XLSX.writeFile(libro, `cruce-${fecha}.xlsx`);
       })
       .catch(() => setError('No pudimos generar el Excel de cruce.'));
+  };
+
+  /**
+   * Rotulado general del dia: TODOS los puntos, no por motorizado, con las
+   * columnas exactas de la hoja de operaciones ("Base de datos Allpa FOOD -
+   * Rotulado"). De esta hoja salen las etiquetas de cada bolsa.
+   *
+   * Ruta = numero de columna del tablero (1 = la primera). Los que aun no
+   * tienen motorizado van al final con la ruta vacia, para que se vean.
+   */
+  const descargarRotuladoGeneral = () => {
+    axios
+      .get(`${baseUrl}admin/orders/export?date=${fecha}`, cabecera)
+      .then((resp) => {
+        const pedidos = resp.data?.data ?? resp.data ?? [];
+        if (!pedidos.length) {
+          setError(`No hay pedidos programados para el ${moment(fecha).format('D [de] MMMM')}.`);
+          return;
+        }
+
+        const numeroRuta = {};
+        (tablero?.rutas || []).forEach((r, i) => { numeroRuta[r.motorizadoId] = i + 1; });
+
+        const sinTildes = (t) => (t || '').normalize('NFD').replace(/(?![\u0303])[\u0300-\u036f]/g, '').normalize('NFC');
+        const DISTRITOS = {
+          'san isidro': 'SISI', 'san borja': 'SBOR', 'san miguel': 'SMIG', 'san luis': 'SLUI',
+          'santiago de surco': 'SURC', 'surco': 'SURC', 'surquillo': 'SURQ', 'jesus maria': 'JESU',
+          'pueblo libre': 'PLIB', 'cercado de lima': 'LIMA', 'lima': 'LIMA', 'barrios altos': 'LIMA',
+          'la molina': 'MOLI', 'la victoria': 'VICT', 'la perla': 'PERL', 'magdalena': 'MAGD',
+          'magdalena del mar': 'MAGD', 'miraflores': 'MIRA', 'barranco': 'BARR', 'chorrillos': 'CHOR',
+          'lince': 'LINC', 'ate': 'ATE', 'salamanca': 'SALA', 'callao': 'CALL', 'breña': 'BREÑ',
+          'pando 3 etapa': 'PAND', 'rimac': 'RIMA', 'san juan de miraflores': 'SJMI',
+          'san juan de lurigancho': 'SJLU', 'los olivos': 'OLIV', 'san martin de porres': 'SMPO',
+          'bellavista': 'BELL', 'santa anita': 'SANI', 'villa el salvador': 'VES',
+        };
+        const distrito = (d) => {
+          const k = sinTildes(d).toLowerCase().replace(/^distrito de\s+/, '').trim();
+          if (!k) return '';
+          if (DISTRITOS[k]) return DISTRITOS[k];
+          return k.replace(/^(la|el|los|las)\s+/, '').replace(/\s+/g, '').slice(0, 4).toUpperCase();
+        };
+        const capital = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '';
+        const nombreCorto = (n, a) => {
+          const nombre = capital((n || '').trim().split(/\s+/)[0]);
+          const inicial = (a || '').trim().charAt(0).toUpperCase();
+          return `${nombre}${inicial ? ` ${inicial}.` : ''}`.trim() || '(sin nombre)';
+        };
+
+        const filas = pedidos
+          .map((o, i) => ({ o, i, ruta: numeroRuta[o.motorizedId] }))
+          .sort((a, b) => (a.ruta ?? 999) - (b.ruta ?? 999) || a.i - b.i)
+          .map(({ o, ruta }) => [
+            nombreCorto(o.clientName, o.clientLastname),
+            ruta ?? '',
+            distrito(o.district),
+            o.doubleProtein === 'Sí' ? 'DOBLE PROTEINA' : '',
+            o.snack === 'Sí' ? 'SNACK' : '',
+            o.sugar === 'No' ? 'SIN AZUCAR' : '',
+            o.alimentsRestrictions && o.alimentsRestrictions !== '-'
+              ? o.alimentsRestrictions.replace(/\s+/g, ' ').trim() : '',
+            o.optionLabel || '',
+          ]);
+
+        const celda = (v) => {
+          const t = String(v ?? '');
+          return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+        };
+        const encabezado = ['Nombre cliente', 'Ruta ', 'DISTRITO ', 'Doble proteina', 'Snack', 'SIN AZUCAR', 'RESTRICCION', 'OPCION'];
+        const csv = [encabezado, ...filas].map((f) => f.map(celda).join(',')).join('\r\n');
+
+        // Con BOM para que Excel lea bien las tildes y la ñ.
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rotulado-${fecha}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        const sinRuta = filas.filter((f) => f[1] === '').length;
+        setAviso(`Rotulado descargado: ${filas.length} puntos${sinRuta ? ` (${sinRuta} todavía sin motorizado, van al final)` : ''}.`);
+      })
+      .catch(() => setError('No pudimos generar el rotulado del día.'));
   };
 
   /** Guarda el orden de una ruta tras soltar. El primero es el punto 1. */
@@ -333,13 +647,24 @@ const Rutas = () => {
 
   /* -------------------------------------------------------------- pintado */
 
-  const totalPuntos =
-    (tablero?.rutas ?? []).reduce((n, r) => n + r.puntos.length, 0) +
-    (tablero?.sinAsignar?.length ?? 0);
+  /* Los que estan en una ruta. Es lo que se puede avisar: un punto en la
+     bandeja no tiene motorizado, asi que no hay salida que anunciarle. */
+  const puntosEnRuta = (tablero?.rutas ?? []).reduce((n, r) => n + r.puntos.length, 0);
+
+  /* El numero de ruta que el coordinador usa por radio —"la 5"— sale de la
+     posicion en esta lista. El servidor ya la devuelve siempre en el mismo
+     orden, asi que el numero no cambia de un dia para otro. */
+  const rutasNumeradas = (tablero?.rutas ?? []).map((r, i) => ({ ...r, numero: i + 1 }));
+
+  const totalPuntos = puntosEnRuta + (tablero?.sinAsignar?.length ?? 0);
 
   return (
     <LayoutPages>
       <TitlePage title={'Rutas del dia'} />
+
+      {/* El coordinador no entra al tablero de cifras: si no esta aqui, no ve
+          en ningun lado a quien le falta entregar. */}
+      <AvanceMotorizados />
 
       <div className="ruBarra">
         <input
@@ -363,6 +688,31 @@ const Rutas = () => {
 
       {error && <div className="ruAviso ruAviso--rojo">{error}</div>}
       {aviso && <div className="ruAviso ruAviso--ok">{aviso}</div>}
+
+      {/* Dos pasos: toca los cinco dias siguientes, no solo el del tablero. */}
+      {confirmarSemana && (
+        <div className="ruAviso">
+          Se van a armar los pedidos que falten de los próximos cinco días de
+          reparto y se les asignará su motorizado. Lo que el cliente ya eligió
+          no se toca.
+          <div className="ruAvisar__confirma" style={{ marginTop: 8 }}>
+            <button
+              className="ruAvisar ruAvisar--si"
+              disabled={preparando}
+              onClick={() => { setConfirmarSemana(false); prepararSemana(); }}
+            >
+              {preparando ? 'Preparando…' : 'Sí, preparar'}
+            </button>
+            <button
+              className="ruAvisar ruAvisar--no"
+              disabled={preparando}
+              onClick={() => setConfirmarSemana(false)}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      )}
       {cargando && <div className="ruAviso">Cargando el tablero…</div>}
 
       {tablero && !cargando && (
@@ -386,6 +736,16 @@ const Rutas = () => {
                 {repartiendo ? 'Repartiendo…' : 'Repartir automático'}
               </button>
             )}
+            {/* Toca los cinco dias siguientes, no solo el que estas viendo,
+                asi que pide confirmacion antes de correr. */}
+            <button
+              className="ruCruce"
+              onClick={() => { setAviso(''); setConfirmarSemana(true); }}
+              disabled={preparando}
+              title="Arma los pedidos que falten de los proximos cinco dias de reparto y les asigna su motorizado"
+            >
+              {preparando ? 'Preparando…' : 'Preparar la semana'}
+            </button>
             <button
               className="ruCruce"
               onClick={descargarCruce}
@@ -393,6 +753,44 @@ const Rutas = () => {
             >
               Excel de cruce
             </button>
+            <button
+              className="ruCruce"
+              onClick={descargarRotuladoGeneral}
+              title="Todos los puntos del dia en el formato de la hoja de rotulado"
+            >
+              Rotulado del día (CSV)
+            </button>
+            <button
+              className="ruCruce"
+              onClick={descargarRepartoGeneral}
+              title="Las ocho rutas en un archivo: cliente, teléfono, dirección y enlace al mapa"
+            >
+              Reparto del día (CSV)
+            </button>
+            {/* El aviso de salida de toda la jornada. Va aparte y en verde:
+                es la unica accion de esta barra que le llega al cliente. */}
+            {puntosEnRuta > 0 && (
+              porAvisar === 'TODAS' ? (
+                <span className="ruAvisar__confirma">
+                  <button className="ruAvisar ruAvisar--si" disabled={avisando}
+                    onClick={avisarSalidaTodas}>
+                    {avisando ? 'Avisando…' : `Sí, avisar a ${puntosEnRuta}`}
+                  </button>
+                  <button className="ruAvisar ruAvisar--no" disabled={avisando}
+                    onClick={() => setPorAvisar(null)}>
+                    No
+                  </button>
+                </span>
+              ) : (
+                <button
+                  className="ruAvisarTodas"
+                  onClick={() => { setAviso(''); setError(null); setPorAvisar('TODAS'); }}
+                  title="Manda el WhatsApp de salida a los clientes de todas las rutas"
+                >
+                  Avisar salida a todas
+                </button>
+              )
+            )}
           </div>
 
           {tablero.sinAsignar.length > 0 && (
@@ -404,23 +802,40 @@ const Rutas = () => {
                 {tablero.sinAsignar.map((p) => (
                   <div
                     key={p.orderId}
-                    className={`ruNuevo ${coincide(p) ? '' : 'ruPunto--apagado'}`}
+                    className={`ruNuevo ${p.direccionNueva ? 'ruPunto--nuevo' : ''} ${coincide(p) ? '' : 'ruPunto--apagado'}`}
                     draggable
                     onDragStart={() => setArrastrando({ orderId: p.orderId, desde: null })}
                     onDragEnd={() => setArrastrando(null)}
                   >
-                    <span className="ruNuevo__nom">{p.cliente}</span>
+                    <span className="ruNuevo__nom">
+                      {p.cliente}
+                      {p.porciones > p.porcionesBase && <b className="ruPunto__x">{p.porciones} platos</b>}
+                    </span>
                     <span className="ruNuevo__dir">{p.direccion || 'sin direccion'}</span>
                     <span className="ruNuevo__dis">{p.distrito}</span>
+                    {(p.direccionNueva || p.antesCon) && (
+                      <span className="ruPunto__nov">
+                        {p.direccionNueva ? 'Dirección nueva' : ''}
+                        {p.direccionNueva && p.antesCon ? ' · ' : ''}
+                        {p.antesCon ? `antes con ${p.antesCon}` : ''}
+                      </span>
+                    )}
                     {p.sugerencia ? (
-                      <div className="ruSug">
-                        <span className="ruSug__txt">mas cerca:</span>
-                        <span className="ruSug__val">{p.sugerencia.nombre}</span>
-                        <span className="ruSug__km">
-                          {p.sugerencia.metros < 1000
-                            ? `${p.sugerencia.metros} m`
-                            : `${(p.sugerencia.metros / 1000).toFixed(1)} km`}
+                      <div className={`ruSug ${p.sugerencia.origen === 'zona' ? 'ruSug--zona' : ''}`}>
+                        {/* Una zona no es lo mismo que una pista de cercanía:
+                            la zona ya la decidió alguien, la distancia es solo
+                            el cliente más próximo. Se dicen distinto. */}
+                        <span className="ruSug__txt">
+                          {p.sugerencia.origen === 'zona' ? 'zona de:' : 'mas cerca:'}
                         </span>
+                        <span className="ruSug__val">{p.sugerencia.nombre}</span>
+                        {p.sugerencia.origen !== 'zona' && (
+                          <span className="ruSug__km">
+                            {p.sugerencia.metros < 1000
+                              ? `${p.sugerencia.metros} m`
+                              : `${(p.sugerencia.metros / 1000).toFixed(1)} km`}
+                          </span>
+                        )}
                         <button
                           className="ruSug__btn"
                           disabled={guardando || !p.sugerencia.tieneCupo}
@@ -444,7 +859,7 @@ const Rutas = () => {
           )}
 
           <div className="ruTablero">
-            {tablero.rutas.map((r) => {
+            {rutasNumeradas.map((r) => {
               const lleno = r.puntos.length >= r.capacidad;
               const casi = !lleno && r.puntos.length >= r.capacidad - 3;
               return (
@@ -457,6 +872,10 @@ const Rutas = () => {
                   <div className="ruRuta__cab">
                     <div className="ruRuta__nom">
                       <span>
+                        {/* El numero va delante del nombre: es como se les
+                            habla por radio, y hasta ahora solo estaba en la
+                            cabeza del coordinador. */}
+                        <b className="ruRuta__num">{r.numero}</b>
                         {r.nombre}
                         {r.externo && <span className="ruExterno">externo</span>}
                       </span>
@@ -464,8 +883,29 @@ const Rutas = () => {
                         {r.puntos.length}/{r.capacidad}
                       </span>
                     </div>
+
+                    {/* Cuantos de esta ruta van a la misma oficina. Son varias
+                        tarjetas pero una sola parada: el motorizado toca una
+                        vez y deja los tapers que diga esta linea. */}
+                    {Object.entries(
+                      r.puntos.reduce((a, p) => {
+                        if (p.empresa) a[p.empresa] = (a[p.empresa] || 0) + 1;
+                        return a;
+                      }, {})
+                    ).map(([nombre, cuantos]) => (
+                      <span className="ruEmpresa" key={nombre}>
+                        {nombre} · {cuantos} en una parada
+                      </span>
+                    ))}
                     {r.puntos.length > 0 && (
                       <>
+                        <button
+                          className="ruRotulado"
+                          onClick={() => descargarReparto(r)}
+                          title="Hoja de reparto: cliente, teléfono, dirección y enlace al mapa"
+                        >
+                          Reparto
+                        </button>
                         <button
                           className="ruRotulado"
                           onClick={() => descargarRotulado(r)}
@@ -525,6 +965,9 @@ const Rutas = () => {
                         onInicio={(orderId, desde) => setArrastrando({ orderId, desde })}
                         onFin={() => setArrastrando(null)}
                         onSoltar={soltarEn}
+                        rutas={rutasNumeradas}
+                        onMover={asignar}
+                        enlaceMapa={enlaceMapa}
                       />
                     ))}
                     {r.puntos.length === 0 && (

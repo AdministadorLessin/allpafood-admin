@@ -22,6 +22,7 @@ import BreakdownCard from '../../sections/dashboard/BreakdownCard';
 import useMetricasNegocio from '../../sections/dashboard/useMetricasNegocio';
 import AvisoRetraso from '../../sections/entregas/AvisoRetraso';
 import NoEntregadas from '../../sections/entregas/NoEntregadas';
+import AvanceMotorizados from '../../sections/entregas/AvanceMotorizados';
 
 const soles = (value) => `S/${Number(value).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`;
 
@@ -43,6 +44,9 @@ const DashboardPage = () => {
 
       {/* Lo que necesita accion hoy va antes que cualquier metrica. */}
       <NoEntregadas />
+
+      {/* A quien le falta entregar, ahora mismo. */}
+      <AvanceMotorizados />
 
       {error &&
         <Alert severity="warning" sx={{ mb: 3 }}>{error}</Alert>

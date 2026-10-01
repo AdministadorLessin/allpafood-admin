@@ -115,3 +115,61 @@ $error : #d32f2f;
     right: 0px;
     z-index: 9;
 }
+/* Cuenta del motorizado: el menu chico que cuelga de "Hola, nombre".
+   La cabecera de esta pantalla es propia y no trae la del panel, que es donde
+   vivia "Cerrar sesion". Sin esto, quien entraba en un telefono prestado se
+   quedaba dentro para siempre. */
+.mhItem.icoProfile{
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px 2px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.motTapa{
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+}
+
+.motCuenta{
+    position: absolute;
+    top: 64px;
+    right: 14px;
+    z-index: 6;
+    min-width: 190px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0px 6px 22px rgba(0,0,0,.22);
+    padding: 12px 14px 10px;
+
+    &__quien{
+        margin: 0 0 9px;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #101F18;
+        padding-bottom: 9px;
+        border-bottom: 1px solid #E4EBE7;
+    }
+
+    &__salir{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 14px;
+        color: #B3261E;
+        padding: 7px 0;
+        cursor: pointer;
+
+        /* En un telefono, un boton de 44px de alto es el minimo para que el
+           dedo no falle. */
+        min-height: 44px;
+    }
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router';
 
 import axios from 'axios';
 
@@ -23,13 +24,29 @@ import logoAllpa from '../../assets/img/isotipo_allpafood.png';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { MAPS_KEY, MAPS_ID } from '../../config';
 
 
-const API_KEY = 'AIzaSyA2RQfrTKIQNzphsuq06Czy5u-BH2XBFsI';
 
 const PageMotorizado = (props) => {
 
-    const { token,planInfo,baseUrl } = useAuthContext();
+    const { token,planInfo,baseUrl,setToken,setPlanInfo } = useAuthContext();
+    const navigate = useNavigate();
+
+    /* Cerrar sesion no existia en esta pantalla. La cabecera del motorizado es
+       propia —no la del panel— y la opcion vivia solo alla, asi que el
+       motorizado que entraba en un telefono prestado, o el que se equivocaba
+       de cuenta, no tenia forma de salir. */
+    const [cuentaAbierta,setCuentaAbierta] = useState(false);
+
+    const cerrarSesion = () => {
+        window.localStorage.removeItem('aftkn');
+        window.localStorage.removeItem('inf');
+        setPlanInfo(null);
+        setToken();
+        navigate('/ingresar');
+    };
     const [ordList,setOrdList] = useState();
     const [startRoute, setStartRoute] = useState(false);
     const [menuOpen,setMenuOpen] = useState(false);
@@ -105,10 +122,34 @@ const PageMotorizado = (props) => {
                     <img src={logoAllpa} alt="" />
                 </figure>
 
-                <div className="mhItem icoProfile">
+                <button
+                    type="button"
+                    className="mhItem icoProfile"
+                    onClick={() => setCuentaAbierta((v) => !v)}
+                    title="Tu cuenta"
+                >
                     <SentimentSatisfiedAltIcon />
                     <span>Hola {infoMot?.profile?.name}</span>
-                </div>
+                </button>
+
+                {cuentaAbierta && (
+                    <>
+                        {/* Tapa toda la pantalla para que un toque afuera cierre
+                            el menu. En el telefono no hay "clic fuera" comodo de
+                            otra forma. */}
+                        <div className="motTapa" onClick={() => setCuentaAbierta(false)} />
+                        <div className="motCuenta">
+                            <p className="motCuenta__quien">
+                                {[infoMot?.profile?.name, infoMot?.profile?.lastname]
+                                    .filter(Boolean).join(' ') || 'Motorizado'}
+                            </p>
+                            <button type="button" className="motCuenta__salir" onClick={cerrarSesion}>
+                                <LogoutIcon fontSize="small" />
+                                Cerrar sesión
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
 
             <MotorizadoMenu 
@@ -130,11 +171,11 @@ const PageMotorizado = (props) => {
             
             <div className="inlineFlex motorizadoMap">
                 <APIProvider 
-                    apiKey={API_KEY}
+                    apiKey={MAPS_KEY}
                     libraries={['marker', 'routes', 'geometry']}
                 >
                     <Map
-                        mapId={'8f1d9e42cf8834cfb88cbcd3'}
+                        mapId={MAPS_ID}
                         defaultZoom={12}
                         className={'dmResumenMapStyle'}
                         defaultCenter={{lat: -12.043254706755375, lng: -77.00264368149209}}
