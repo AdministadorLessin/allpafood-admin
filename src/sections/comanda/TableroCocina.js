@@ -22,6 +22,16 @@ const C = {
 /* Tamaño que escala con la pantalla, con piso para laptops chicas. */
 /* Escala con el ancho Y con el alto: si la TV muestra barras del navegador o
    tiene otra proporcion, todo se achica para seguir entrando en pantalla. */
+/* Los extras que acompanan al plato. La entrada faltaba: salia crudo como
+   "starter" en la pantalla de cocina, que es justo donde hay que leer rapido
+   —y es lo que lleva el paquete de las empresas. */
+const ETIQUETA_EXTRA = {
+  starter: 'Entradas',
+  snacks: 'Snacks',
+  breakfast: 'Desayunos',
+  drinks: 'Bebidas',
+};
+
 const vw = (valor, minimo) => `max(${Math.round(minimo * 0.75)}px, min(${valor}vw, ${(valor * 1.62).toFixed(2)}vh))`;
 
 const Panel = ({ titulo, total, acento = C.mint, tinta = C.mintInk, ancho, children }) => (
@@ -62,17 +72,25 @@ export default function TableroCocina({ cocina }) {
   const escala = restricciones.length > 30 ? 0.78 : restricciones.length > 22 ? 0.88 : 1;
 
   return (
-    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', gap: '1vw' }}>
+    /* El tablero toma el alto que queda en pantalla. No crece con el
+       contenido: si creciera, una lista larga de restricciones empujaria los
+       platos y separaria las opciones unas de otras. */
+    <Box sx={{ flex: 1, minHeight: 'min(56vh, 520px)', display: 'flex', gap: '1vw' }}>
 
-      <Panel titulo="Platos" total={totalPlatos} ancho={0.95}>
+      <Panel titulo="Platos" total={totalPlatos} ancho={1.15}>
         {platos.length === 0 ? (
           <Typography sx={{ color: C.soft, fontSize: vw(1.2, 14), py: 2 }}>Sin platos programados</Typography>
         ) : (
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', overflowY: 'auto' }}>
+          /* Juntas y arrancando arriba, no repartidas por el alto del panel.
+             Con space-evenly el alto lo marcaba la columna de restricciones y
+             las tres opciones quedaban separadas por huecos distintos cada
+             dia. La 1 siempre en el mismo sitio: la cocina la busca por
+             posicion, no por lectura. */
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflowY: 'auto' }}>
             {platos.map((p) => (
               <Box key={p.op} sx={{
                 display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '1vw', alignItems: 'center',
-                py: 'min(1vw, 1.4vh)', borderBottom: `1px solid ${C.line}`, '&:last-child': { borderBottom: 0 },
+                py: 'min(.75vw, 1vh)', borderBottom: `1px solid ${C.line}`, '&:last-child': { borderBottom: 0 },
               }}>
                 <Box sx={{
                   width: 'min(4.4vw, 7vh)', height: 'min(4.4vw, 7vh)', minWidth: 34, minHeight: 34, borderRadius: '.9vw',
@@ -80,10 +98,10 @@ export default function TableroCocina({ cocina }) {
                   fontSize: vw(2.8, 24), fontWeight: 900,
                 }}>{p.op}</Box>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: vw(1.4, 15), fontWeight: 600, color: C.ink, lineHeight: 1.2 }}>
+                  <Typography sx={{ fontSize: vw(1.25, 14), fontWeight: 600, color: C.ink, lineHeight: 1.18 }}>
                     {p.nombre}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: '.45vw', flexWrap: 'wrap', mt: '.5vw' }}>
+                  <Box sx={{ display: 'flex', gap: '.4vw', flexWrap: 'wrap', mt: '.35vw' }}>
                     {p.doble > 0 && <Chip fondo={C.coral} color="#3A1205">{p.doble} doble proteína</Chip>}
                     {p.conRestriccion > 0 && (
                       <Chip fondo="rgba(245,196,81,.18)" color={C.amber}>{p.conRestriccion} con restricción</Chip>
@@ -91,7 +109,7 @@ export default function TableroCocina({ cocina }) {
                   </Box>
                 </Box>
                 <Typography sx={{
-                  fontSize: vw(5, 40), fontWeight: 900, color: C.mint, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                  fontSize: vw(4.2, 34), fontWeight: 900, color: C.mint, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
                 }}>{p.cantidad}</Typography>
               </Box>
             ))}
@@ -99,23 +117,23 @@ export default function TableroCocina({ cocina }) {
         )}
       </Panel>
 
-      <Panel titulo="Bebidas" total={totalBebidas} ancho={0.72}>
+      <Panel titulo="Bebidas" total={totalBebidas} ancho={0.85}>
         {bebidas.map((b) => (
-          <Typography key={b.nombre} sx={{ fontSize: vw(1.5, 15), fontWeight: 600, color: C.ink, my: '.6vw' }}>
+          <Typography key={b.nombre} sx={{ fontSize: vw(1.3, 14), fontWeight: 600, color: C.ink, my: '.4vw', lineHeight: 1.2 }}>
             {b.nombre}
           </Typography>
         ))}
         {totalBebidas > 0 && (
-          <Box sx={{ display: 'grid', gap: '.6vw', mt: '.4vw' }}>
+          <Box sx={{ display: 'grid', gap: '.45vw', mt: '.3vw', flexShrink: 0 }}>
             {[['Con azúcar', totalBebidas - sinAzucar, false], ['Sin azúcar', sinAzucar, true]].map(([t, n, sin]) => (
               <Box key={t} sx={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                px: '1.1vw', py: '1vw', borderRadius: '.8vw',
+                px: '1vw', py: '.7vw', borderRadius: '.8vw',
                 bgcolor: sin ? C.amber : 'rgba(255,255,255,.04)', color: sin ? C.amberInk : C.ink,
               }}>
                 <Typography sx={{ fontSize: vw(1.35, 14), fontWeight: 800, whiteSpace: 'nowrap', color: 'inherit' }}>{t}</Typography>
                 <Typography sx={{
-                  fontSize: vw(3.4, 30), fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                  fontSize: vw(2.9, 26), fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
                   color: sin ? 'inherit' : C.mint,
                 }}>{n}</Typography>
               </Box>
@@ -123,18 +141,35 @@ export default function TableroCocina({ cocina }) {
           </Box>
         )}
 
+        {/* Snacks y entradas, compactos.
+            Cada uno ocupaba cuatro lineas con el numero en tamano de titular,
+            asi que el tercero se salia del panel —y el panel recorta sin
+            avisar—. Justo la entrada, que es lo que lleva el paquete de las
+            empresas, se quedaba fuera de la pantalla. */}
         {otros.length > 0 && (
           <>
-            <Box sx={{ height: '1px', bgcolor: C.line, mt: '1.2vw' }} />
+            <Box sx={{ height: '1px', bgcolor: C.line, mt: '.8vw', flexShrink: 0 }} />
             {otros.map((o) => (
-              <Box key={`${o.tipo}-${o.nombre}`} sx={{ mt: '.9vw' }}>
+              <Box key={`${o.tipo}-${o.nombre}`} sx={{
+                display: 'flex', alignItems: 'baseline', gap: '.6vw', mt: '.6vw', minWidth: 0, flexShrink: 0,
+              }}>
                 <Typography sx={{
-                  fontSize: vw(.85, 11), fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: C.soft,
-                }}>{o.tipo === 'snacks' ? 'Snacks' : o.tipo === 'breakfast' ? 'Desayunos' : o.tipo}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                  <Typography sx={{ fontSize: vw(1.5, 15), fontWeight: 600, color: C.ink }}>{o.nombre}</Typography>
-                  <Typography sx={{ fontSize: vw(3.4, 28), fontWeight: 900, color: C.mint }}>{o.cantidad}</Typography>
-                </Box>
+                  fontSize: vw(.85, 11), fontWeight: 800, letterSpacing: '.1em',
+                  textTransform: 'uppercase', color: C.soft, whiteSpace: 'nowrap',
+                }}>{ETIQUETA_EXTRA[o.tipo] || o.tipo}</Typography>
+                {/* Sin recortar: "Boliyucas con q..." no le dice nada a quien
+                    tiene que armarlo. Son uno o dos por dia, hay sitio para
+                    que el nombre entre en dos lineas. */}
+                <Typography sx={{
+                  flex: 1, minWidth: 0, fontSize: vw(1.25, 13), fontWeight: 600,
+                  color: C.ink, lineHeight: 1.2,
+                }}>
+                  {o.nombre}
+                </Typography>
+                <Typography sx={{
+                  fontSize: vw(2, 18), fontWeight: 900, color: C.mint,
+                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                }}>{o.cantidad}</Typography>
               </Box>
             ))}
           </>
@@ -145,22 +180,38 @@ export default function TableroCocina({ cocina }) {
         {restricciones.length === 0 ? (
           <Typography sx={{ color: C.soft, fontSize: vw(1.2, 14), py: 2 }}>Nadie con restricciones este día.</Typography>
         ) : (
+          /* Sin barra de totales arriba.
+             Se probo y no sirve: la restriccion es texto libre, asi que el
+             resumen salia con cuarenta etiquetas de una sola persona —"09",
+             "Tengo colesterol", "Nada de mayonesa... dejar en la garita"— y
+             tapaba la lista, que es lo que cocina de verdad lee. Vuelve a
+             tener sentido el dia que el campo este depurado. */
           <Box sx={{
+            flex: 1, minHeight: 0, overflowY: 'auto',
             display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '1.4vw', alignContent: 'start',
             fontSize: `${escala}em`,
           }}>
             {restricciones.map((r, i) => (
-              <Box key={`${r.op}-${r.nombre}-${i}`} sx={{
-                display: 'grid', gridTemplateColumns: '2.3vw 8.8vw 1fr', gap: '.6vw', alignItems: 'center',
+              <Box key={`${r.nombre}-${i}`} sx={{
+                display: 'grid', gridTemplateColumns: 'auto 8.8vw 1fr', gap: '.6vw', alignItems: 'center',
                 py: `${0.42 * escala}vw`, borderBottom: `1px solid ${C.line}`,
               }}>
-                <Box sx={{
-                  width: '2.3vw', height: '2.3vw', minWidth: 22, minHeight: 22, borderRadius: '.5vw',
-                  bgcolor: C.mint, color: C.mintInk, display: 'grid', placeItems: 'center',
-                  fontSize: vw(1.3 * escala, 12), fontWeight: 900,
-                }}>{r.op}</Box>
+                {/* Todas las opciones de esa persona juntas: una fila, un
+                    nombre, una alergia. Antes la misma persona se repetia una
+                    vez por cada opcion que llevaba. */}
+                <Box sx={{ display: 'flex', gap: '.3vw' }}>
+                  {r.ops.map((o) => (
+                    <Box key={o.op} sx={{
+                      width: '2.3vw', height: '2.3vw', minWidth: 22, minHeight: 22, borderRadius: '.5vw',
+                      bgcolor: C.mint, color: C.mintInk, display: 'grid', placeItems: 'center',
+                      fontSize: vw(1.3 * escala, 12), fontWeight: 900,
+                    }}>
+                      {o.op}{o.veces > 1 && <Box component="span" sx={{ fontSize: '.7em' }}>×{o.veces}</Box>}
+                    </Box>
+                  ))}
+                </Box>
                 <Typography noWrap sx={{ fontSize: vw(1.35 * escala, 13), fontWeight: 800, color: C.ink }}>
-                  {r.nombre}{r.veces > 1 && <Box component="span" sx={{ color: C.coral }}> ×{r.veces}</Box>}
+                  {r.nombre}
                 </Typography>
                 <Typography sx={{ fontSize: vw(1.12 * escala, 12), fontWeight: 700, color: C.amber, lineHeight: 1.25 }}>
                   {r.tags.join(' · ')}

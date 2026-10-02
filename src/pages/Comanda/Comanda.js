@@ -213,8 +213,14 @@ const ComandaPage = (props) => {
     return (
         <Box
             sx={{
+                /* La pantalla ocupa el monitor y no se mueve: en cocina
+                   nadie scrollea. Lo que puede crecer —la lista de
+                   restricciones— se desplaza DENTRO de su propio cuadro, asi
+                   que el tablero no se estira ni empuja el bloque de empresas
+                   fuera de la vista. El scroll de la pagina queda solo por si
+                   un dia hay tantas empresas que ya no entran. */
                 height: '100vh',
-                overflow: 'hidden',
+                overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1vw',

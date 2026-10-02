@@ -104,6 +104,11 @@ const CoberturaPage = () => {
   const [asignacion, setAsignacion] = useState({});
 
   /* El buscador: la pregunta que el vendedor se hace veinte veces al dia. */
+  /* Los motorizados salen del servidor y no de los puntos del dia: uno que
+     hoy no tiene ninguna parada igual tiene que poder recibir una. */
+  const [plantilla, setPlantilla] = useState([]);
+  const [moviendo, setMoviendo] = useState(false);
+
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState(null);
   const [buscando, setBuscando] = useState(false);
@@ -218,6 +223,50 @@ const CoberturaPage = () => {
   /* Las motos que aparecen en el mapa, con su color y su conteo. El color se
      asigna por posicion en esta lista y no al azar: asi el mismo motorizado
      conserva su color mientras no cambie el equipo. */
+  useEffect(() => {
+    axios.get(`${baseUrl}delivery/motorized/find-users`,
+      { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setPlantilla(r.data?.data ?? r.data ?? []))
+      .catch(() => setPlantilla([]));
+  }, [token, baseUrl]);
+
+  /**
+   * Pasar un punto a otro motorizado, desde el mapa.
+   *
+   * En la vista del dia se mueve el pedido de ese dia, igual que el tablero de
+   * rutas. En cobertura total no hay pedido: se cambia a quien le toca esa
+   * direccion de aqui en adelante.
+   */
+  const moverPunto = (punto, motorizadoId) => {
+    if (!motorizadoId || motorizadoId === punto.motorizadoId) return;
+    setMoviendo(true);
+    setError(null);
+
+    const cab = { headers: { Authorization: `Bearer ${token}` } };
+    const peticion = vista === 'dia'
+      ? axios.post(`${baseUrl}delivery/motorized/assign-route`,
+          { orderIds: [punto.id], userId: motorizadoId }, cab)
+      : axios.put(`${baseUrl}admin/cobertura/punto/${punto.id}/motorizado`,
+          { motorizadoId }, cab);
+
+    peticion
+      .then(() => {
+        const nuevo = plantilla.find((m) => (m.id || m.userId) === motorizadoId);
+        const nombre = nuevo
+          ? [nuevo.name ?? nuevo.profile?.name, nuevo.lastname ?? nuevo.profile?.lastname]
+              .filter(Boolean).join(' ').trim()
+          : '';
+        /* Se pinta al toque con el color nuevo en vez de esperar la recarga:
+           sobre el mapa, el cambio tiene que verse donde uno esta mirando. */
+        setElegido((e) => (e ? { ...e, motorizadoId, motorizado: nombre } : e));
+        setPuntos((lista) => lista.map((p) =>
+          p.id === punto.id ? { ...p, motorizadoId, motorizado: nombre } : p));
+      })
+      .catch((err) => setError(err.response?.data?.message
+        || 'No pudimos cambiarle el motorizado a este punto.'))
+      .finally(() => setMoviendo(false));
+  };
+
   const motos = useMemo(() => {
     const mapa = new Map();
     puntos.forEach((p) => {
@@ -441,6 +490,32 @@ const CoberturaPage = () => {
                 {elegido.motorizado || 'Sin asignar'}
                 {elegido.posicion ? ` · parada ${elegido.posicion}` : ''}
               </span>
+
+              {/* Cambiar de moto desde el mapa. Aqui se ve lo que una lista no
+                  muestra: que el punto cae a tres cuadras de la ruta de otro. */}
+              <label className="cobFicha__mover">
+                <span>{vista === 'dia' ? 'Mover este pedido a' : 'Esta dirección la lleva'}</span>
+                <select
+                  value={elegido.motorizadoId || ''}
+                  disabled={moviendo}
+                  onChange={(e) => moverPunto(elegido, e.target.value)}
+                >
+                  <option value="">Sin asignar</option>
+                  {plantilla.map((m) => {
+                    const id = m.id || m.userId;
+                    const nombre = [m.name ?? m.profile?.name, m.lastname ?? m.profile?.lastname]
+                      .filter(Boolean).join(' ').trim() || id;
+                    return <option key={id} value={id}>{nombre}</option>;
+                  })}
+                </select>
+                <small>
+                  {moviendo
+                    ? 'Moviendo…'
+                    : vista === 'dia'
+                      ? 'Cambia solo la entrega de este día.'
+                      : 'Cambia quién la lleva de aquí en adelante, y los pedidos ya programados.'}
+                </small>
+              </label>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${elegido.lat},${elegido.lng}`}
                 target="_blank"

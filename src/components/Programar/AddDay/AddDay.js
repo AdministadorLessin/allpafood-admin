@@ -36,7 +36,11 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
     dinner:[],
     lunch:[],
     snacks:[],
-    drinks:[]
+    drinks:[],
+    /* La entrada faltaba en esta lista. CardMenu solo agrega el plato a los
+       tipos que existen aqui, asi que una entrada se podia buscar pero no
+       entraba al dia, y el boton ni siquiera estaba. */
+    starter:[]
   });
 
   const removePlate = (item,cat) =>{
@@ -69,6 +73,11 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
       const removeItemArr = arrTmp.filter(itemFilter => itemFilter.id != item.id)
       arrTmp = removeItemArr;
       setDayMenu({...dayMenu,drinks:arrTmp});
+    }else if(cat === 'starter'){
+      arrTmp = dayMenuTmp.starter
+      const removeItemArr = arrTmp.filter(itemFilter => itemFilter.id != item.id)
+      arrTmp = removeItemArr;
+      setDayMenu({...dayMenu,starter:arrTmp});
     }
   }
 
@@ -77,30 +86,32 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
   const [errorSend,setErrorSend] = useState(false);
 
   const sendRequest = () =>{
+    /* Si el dia ya tenia menu y no se pudo leer, guardar lo borraria: el
+       servidor reemplaza el dia entero con lo que llegue. Mejor no dejar
+       guardar que dejar el dia en blanco. */
+    if (updateOrder && !cargoElDia) {
+      setErrorSend(true);
+      return;
+    }
     setLoadForm(true);
     let arrTmp = [];
 
-    dayMenu.breakfast.forEach((item) => {
-      item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
+    /* El orden importa: la posicion dentro del dia es el numero de opcion
+       que ve el cliente y que lee cocina. Se manda como estan cargados todos
+       los demas dias —almuerzos, cenas, y al final lo que acompana— para que
+       un dia tocado hoy no quede numerado distinto que el de ayer. */
+    [dayMenu.lunch, dayMenu.dinner, dayMenu.breakfast,
+     dayMenu.drinks, dayMenu.snacks, dayMenu.starter].forEach((lista) => {
+      lista.forEach((item) => {
+        item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
+      });
     });
 
-    /*
-    dayMenu.dinner.forEach((item) => {
-      item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
-    });
-    */
-
-    dayMenu.lunch.forEach((item) => {
-      item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
-    });
-
-    dayMenu.snacks.forEach((item) => {
-      item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
-    });
-
-    dayMenu.drinks.forEach((item) => {
-      item.menuTypes.forEach((menuType) => arrTmp.push(menuType.id));
-    });
+    /* Sin repetidos. Un plato que esta cargado como almuerzo Y como cena trae
+       los dos ids, asi que recorrer las dos listas lo mandaba dos veces y el
+       servidor rechazaba el dia entero con "No puedes registrar el mismo menu
+       para esta fecha". */
+    arrTmp = [...new Set(arrTmp)];
 
     const dateSlot = moment(dateSelect.start).format('YYYY-MM-DD');
 
@@ -146,6 +157,42 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
     }
   }
 
+  /* Lo que el dia YA tiene programado.
+     El modal arrancaba vacio aunque el dia estuviera lleno, y "Enviar" manda
+     la lista completa: agregar una entrada a un dia ya armado lo dejaba con
+     la entrada sola. Paso el 02-10-2026 con el lunes 5, que los clientes ya
+     habian elegido. Ahora se precarga y lo que se manda es lo que hay mas lo
+     que se agrego. */
+  const [cargoElDia,setCargoElDia] = useState(false);
+
+  const cargarDiaActual = () => {
+    if (!dateSelect) return;
+    const fecha = moment(dateSelect.start).format('YYYY-MM-DD');
+    axios.get(`${baseUrl}menu/schedule?startDate=${fecha}&endDate=${fecha}`,
+      { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        const lista = r.data?.data || [];
+        const dia = lista.find((d) => d.localDate === fecha);
+        const cargado = { breakfast:[], dinner:[], lunch:[], snacks:[], drinks:[], starter:[] };
+        (dia?.menuTypeGroups || []).forEach((grupo) => {
+          (grupo.menuTypes || []).forEach((mt) => {
+            if (!cargado[grupo.type]) return;
+            cargado[grupo.type].push({
+              id: mt.id,
+              name: mt.menu?.name,
+              imageUrl: mt.menu?.imageUrl,
+              /* Solo SU id: si se mandaran todos los tipos del plato, agregar
+                 un almuerzo arrastraria tambien su cena. */
+              menuTypes: [{ id: mt.id }],
+            });
+          });
+        });
+        setDayMenu(cargado);
+        setCargoElDia(true);
+      })
+      .catch(() => setCargoElDia(false));
+  };
+
   const getEvent = ()=>{
 
     const test = eventList.filter((el)=> {
@@ -164,6 +211,8 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
 
   useEffect(()=>{
     getEvent();
+    cargarDiaActual();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   
   return (
@@ -321,6 +370,36 @@ const ProgramAddDay = ({date,menus,catFunc,dateSelect,closeModal,updateEvents,ev
         </div>
         <Button 
           onClick={()=>handleOpen('drinks','Bebidas')} 
+          variant="contained"
+          className="btnSecond" 
+        >
+          Agregar <AddIcon />
+        </Button>
+      </div>
+
+      <div className="cpadItem">
+        <h5>Entrada</h5>
+        <div className="inlineFlex cpadPlateList">
+          {dayMenu.starter.map((item)=>
+             (
+              <div className="inlineFlex cpadPlateItem" key={item.id}>
+                <figure>
+                    <img src={item.imageUrl ? item.imageUrl : imgFood} alt="" />
+                </figure>
+                <div className="txt">
+                    <h4>{item.name}</h4>
+                </div>
+                <div className="action">
+                    <IconButton aria-label="settings" onClick={()=>removePlate(item,'starter')}>
+                        <CloseIcon />
+                    </IconButton>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+        <Button 
+          onClick={()=>handleOpen('starter','Entrada')} 
           variant="contained"
           className="btnSecond" 
         >

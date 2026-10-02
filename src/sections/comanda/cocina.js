@@ -74,6 +74,12 @@ export function armarCocina(comanda, detalle) {
   }));
   const porOp = (op) => platos.find((p) => p.op === op);
 
+  /* Una fila por PERSONA, no por plato.
+     Antes se empujaba una fila por cada opcion distinta que llevaba el
+     cliente, asi que quien pedia almuerzo de la 1 y cena de la 3 aparecia dos
+     veces con la misma alergia. En cocina eso se lee como dos personas: el
+     02-10 la pantalla decia 48 restricciones cuando eran 43 personas. La
+     restriccion es de la persona, y sus opciones son un dato de esa fila. */
   const filas = [];
   pedidos.forEach((p) => {
     const ops = opcionesDe(p);
@@ -81,12 +87,29 @@ export function armarCocina(comanda, detalle) {
 
     const tags = etiquetasDeRestriccion(p.alimentsRestrictions);
     if (!tags.length) return;
-    [...new Set(ops)].forEach((op) => {
-      const pl = porOp(op); if (pl) pl.conRestriccion += 1;
-      filas.push({ op, nombre: nombreCorto(p.clientName, p.clientLastname), veces: ops.filter((x) => x === op).length, tags });
+
+    const unicas = [...new Set(ops)];
+    unicas.forEach((op) => { const pl = porOp(op); if (pl) pl.conRestriccion += 1; });
+
+    filas.push({
+      nombre: nombreCorto(p.clientName, p.clientLastname),
+      ops: unicas.map((op) => ({ op, veces: ops.filter((x) => x === op).length })),
+      tags,
     });
   });
-  filas.sort((a, b) => a.op - b.op || a.nombre.localeCompare(b.nombre, 'es'));
+  /* Por la primera opcion que lleva: la cocina recorre la lista mientras
+     emplata la olla 1, despues la 2. */
+  filas.sort((a, b) => (a.ops[0]?.op ?? 99) - (b.ops[0]?.op ?? 99)
+    || a.nombre.localeCompare(b.nombre, 'es'));
+
+  /* El resumen del dia: cuantas personas por cada restriccion.
+     Es lo primero que necesita quien cocina —"hoy hay 6 sin lactosa"— y
+     estaba solo implicito en una lista de cuarenta nombres que nadie suma. */
+  const cuenta = new Map();
+  filas.forEach((f) => f.tags.forEach((t) => cuenta.set(t, (cuenta.get(t) || 0) + 1)));
+  const resumen = [...cuenta.entries()]
+    .map(([tag, n]) => ({ tag, n }))
+    .sort((a, b) => b.n - a.n || a.tag.localeCompare(b.tag, 'es'));
 
   // Bebidas: una por plato. Las de los clientes sin azucar se cuentan aparte.
   const complementos = comanda?.complements || [];
@@ -105,6 +128,7 @@ export function armarCocina(comanda, detalle) {
     sinAzucar: Math.min(sinAzucar, totalBebidas),
     otros: otros.map((c) => ({ tipo: c.menuType, nombre: c.menuName, cantidad: Number(c.count) || 0 })),
     restricciones: filas,
-    clientesConRestriccion: new Set(filas.map((f) => f.nombre + f.tags.join())).size,
+    resumenRestricciones: resumen,
+    clientesConRestriccion: filas.length,
   };
 }

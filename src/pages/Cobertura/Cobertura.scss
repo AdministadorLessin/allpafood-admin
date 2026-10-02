@@ -330,3 +330,46 @@
         color: #17603C;
     }
 }
+
+/* Cambiar de motorizado desde la ficha del punto.
+   Sobre el mapa se decide mejor que en una lista: ahi se ve que el punto cae
+   a tres cuadras de la ruta de otro, y eso una lista no lo muestra. */
+.cobFicha__mover{
+    display: block;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E4EBE7;
+
+    > span{
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: #8A968F;
+        margin-bottom: 6px;
+    }
+
+    select{
+        width: 100%;
+        border: 1px solid #E4EBE7;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font: inherit;
+        font-size: 13px;
+        background: #FFFFFF;
+        color: #101F18;
+        cursor: pointer;
+
+        &:focus{ outline: 2px solid rgba(23,96,60,.25); border-color: #17603C; }
+        &:disabled{ opacity: .6; cursor: default; }
+    }
+
+    small{
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        line-height: 1.35;
+        color: #8A968F;
+    }
+}

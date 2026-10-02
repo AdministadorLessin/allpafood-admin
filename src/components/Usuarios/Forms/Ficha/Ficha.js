@@ -142,6 +142,19 @@ const UsuarioFicha = ({ data, onAccion, getUsuarios }) => {
      esto la ficha les mostraba "acepta azucar" a quienes pidieron sin azucar. */
   const [azucar, setAzucar] = useState(![false, 0, '0', 'false'].includes(info.sugar));
   const [dobleProteina, setDobleProteina] = useState([true, 1, '1', 'true'].includes(info.doubleProtein));
+
+  /* Productos que van en TODOS sus pedidos ademas del plato. No son platos
+     sueltos: se guarda el TIPO y cada dia entra el que este programado en el
+     menu de esa fecha, igual que la bebida. */
+  const ADICIONALES = [
+    { tipo: 'breakfast', nombre: 'Desayuno' },
+    { tipo: 'snacks', nombre: 'Snack' },
+    { tipo: 'starter', nombre: 'Entrada' },
+  ];
+  const [adicionales, setAdicionales] = useState(
+    Array.isArray(data?.adicionales) ? data.adicionales : []);
+  const alternarAdicional = (tipo) => setAdicionales((lista) =>
+    lista.includes(tipo) ? lista.filter((t) => t !== tipo) : [...lista, tipo]);
   const [guardandoPref, setGuardandoPref] = useState(false);
 
   const [clave, setClave] = useState('');
@@ -195,7 +208,8 @@ const UsuarioFicha = ({ data, onAccion, getUsuarios }) => {
   const guardarPreferencias = () => {
     setGuardandoPref(true); setAviso(''); setError('');
     axios.put(`${baseUrl}admin/users/${data.id}/preferences`,
-      { alimentsRestrictions: restricciones, sugar: azucar, doubleProtein: dobleProteina },
+      { alimentsRestrictions: restricciones, sugar: azucar, doubleProtein: dobleProteina,
+        additional: adicionales },
       cabecera)
       .then(() => { setAviso('Preferencias guardadas.'); if (getUsuarios) getUsuarios(); })
       .catch((e) => setError(e?.response?.data?.message || 'No pudimos guardar las preferencias.'))
@@ -415,7 +429,10 @@ const UsuarioFicha = ({ data, onAccion, getUsuarios }) => {
       </Plegable>
 
       <Plegable titulo="Lo que cocina tiene que respetar"
-        resumen={[restricciones ? 'con restricciones' : null, !azucar ? 'sin azúcar' : null, dobleProteina ? 'doble proteína' : null].filter(Boolean).join(' · ') || 'nada especial'}>
+        resumen={[restricciones ? 'con restricciones' : null, !azucar ? 'sin azúcar' : null,
+          dobleProteina ? 'doble proteína' : null,
+          ...adicionales.map((t) => (ADICIONALES.find((a) => a.tipo === t)?.nombre || t).toLowerCase()),
+        ].filter(Boolean).join(' · ') || 'nada especial'}>
         <TextField fullWidth multiline minRows={2} variant="filled"
           label="Restricciones (sale tal cual en la comanda)"
           placeholder="Sin lactosa, sin cerdo…"
@@ -427,6 +444,26 @@ const UsuarioFicha = ({ data, onAccion, getUsuarios }) => {
           <FormControlLabel
             control={<Switch checked={dobleProteina} onChange={(e) => setDobleProteina(e.target.checked)} />}
             label="Doble proteína" />
+        </Box>
+
+        {/* Lo que se le suma a cada pedido. Hasta ahora lo unico que se podia
+            marcar era la doble proteina, asi que un desayuno o un snack extra
+            habia que acordarlo por WhatsApp y recordarlo cada dia. */}
+        <Box sx={{ mt: 1.5 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.secondary', mb: .5 }}>
+            Productos adicionales en cada pedido
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {ADICIONALES.map((a) => (
+              <FormControlLabel key={a.tipo}
+                control={<Switch checked={adicionales.includes(a.tipo)}
+                  onChange={() => alternarAdicional(a.tipo)} />}
+                label={a.nombre} />
+            ))}
+          </Box>
+          <Typography sx={{ fontSize: 12.5, color: 'text.secondary', mt: .5 }}>
+            Entra el que esté programado ese día en el menú. Si un día no hay, ese día no va.
+          </Typography>
         </Box>
         <button type="button" className={guardandoPref ? 'btnPrimary btnDisabled' : 'btnPrimary'}
           disabled={guardandoPref} onClick={guardarPreferencias}>

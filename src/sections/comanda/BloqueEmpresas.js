@@ -64,6 +64,12 @@ const BloqueEmpresas = ({ fecha, platos }) => {
   return (
     <section className="cmEmp">
       <h3 className="cmEmp__tit">Para empresas</h3>
+      {/* Dicho en la pantalla y no solo en el codigo: estos tapers YA estan
+          dentro del conteo de arriba. Es el error facil de cometer cuando una
+          empresa nueva aparece en la comanda —sumarlos y cocinar de mas—. */}
+      <p className="cmEmp__nota">
+        Ya están contados arriba. Esto es para empacar: cuántos tapers van a cada oficina.
+      </p>
 
       <div className="cmEmp__lista">
         {empresas.map((e) => {

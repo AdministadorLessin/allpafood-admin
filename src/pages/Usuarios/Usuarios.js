@@ -146,6 +146,10 @@ const PageUsuarios = (props) => {
             consumedHide: item.consumedBenefits?.orders?.consumed,
             consumedCount: item.consumedBenefits?.orders?.consumed,
             consumedTotal: item.consumedBenefits?.orders?.total,
+            /* Los adicionales del plan (desayuno, snack, entrada), para que la
+               ficha muestre marcados los que ya tiene. */
+            adicionales: Array.isArray(item.consumedBenefits?.additional)
+              ? item.consumedBenefits.additional : [],
             consumed: item.consumedBenefits?.orders?.consumed + ' / ' + item.consumedBenefits?.orders?.total,
             /* Con el motivo al lado: en la lista de bajas lo primero que se
                pregunta es por que se fue, no cuando. */
